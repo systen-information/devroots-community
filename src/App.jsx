@@ -419,7 +419,51 @@ function Hero({ setPage }) {
     <section className="hero">
       <div className="hero-pattern" />
       <div className="hero-content fade">
-        <div style={{ marginBottom: "1.5rem" }}><img src="/devroots-logo.png" alt="DevRoots" style={{ height: 120, objectFit: "contain" }} /></div>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" style={{ width: "min(600px, 90vw)", height: "auto" }}>
+            <defs>
+              <linearGradient id="d1" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0%" stopColor="#9ccc65"/><stop offset="40%" stopColor="#7cb342"/><stop offset="100%" stopColor="#558b2f"/></linearGradient>
+              <linearGradient id="d2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7cb342"/><stop offset="100%" stopColor="#4a6b2a"/></linearGradient>
+              <linearGradient id="d3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f9a825"/><stop offset="100%" stopColor="#c88a10"/></linearGradient>
+              <linearGradient id="d4" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0%" stopColor="#7cb342" stopOpacity="0.15"/><stop offset="100%" stopColor="transparent"/></linearGradient>
+              <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#7cb342" floodOpacity="0.3"/></filter>
+            </defs>
+            <g transform="translate(175,175)">
+              <circle cx="0" cy="-15" r="80" fill="url(#d4)"/>
+              <path d="M0,-95 Q-55,-50 -55,-20 Q-55,5 -35,15 Q-18,22 0,22 Q18,22 35,15 Q55,5 55,-20 Q55,-50 0,-95 Z" fill="url(#d1)" filter="url(#sh)"/>
+              <path d="M-15,-70 Q-35,-45 -35,-25 Q-35,-10 -20,-3" fill="#8bc34a" opacity="0.3"/>
+              <path d="M10,-65 Q25,-40 25,-22 Q25,-8 15,0" fill="#aed581" opacity="0.2"/>
+              <path d="M0,-90 L0,20" stroke="#558b2f" strokeWidth="2" fill="none" opacity="0.3"/>
+              <path d="M0,-60 L-25,-30" stroke="#558b2f" strokeWidth="1" fill="none" opacity="0.2"/>
+              <path d="M0,-60 L25,-30" stroke="#558b2f" strokeWidth="1" fill="none" opacity="0.2"/>
+              <rect x="-5" y="20" width="10" height="25" rx="3" fill="url(#d2)"/>
+              <line x1="0" y1="45" x2="0" y2="75" stroke="url(#d3)" strokeWidth="2.5"/>
+              <polyline points="0,55 -25,55 -25,70 -50,70" stroke="url(#d3)" strokeWidth="2.5" fill="none"/>
+              <polyline points="-25,55 -25,45 -40,45" stroke="url(#d3)" strokeWidth="1.8" fill="none"/>
+              <polyline points="-50,70 -50,80 -40,80" stroke="url(#d3)" strokeWidth="1.5" fill="none"/>
+              <polyline points="0,55 25,55 25,70 50,70" stroke="url(#d3)" strokeWidth="2.5" fill="none"/>
+              <polyline points="25,55 25,45 40,45" stroke="url(#d3)" strokeWidth="1.8" fill="none"/>
+              <polyline points="50,70 50,80 40,80" stroke="url(#d3)" strokeWidth="1.5" fill="none"/>
+              <polyline points="0,75 -12,75 -12,85" stroke="url(#d3)" strokeWidth="1.5" fill="none"/>
+              <polyline points="0,75 12,75 12,85" stroke="url(#d3)" strokeWidth="1.5" fill="none"/>
+              <circle cx="-25" cy="55" r="3.5" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="-25" cy="55" r="1.5" fill="#f9a825"/>
+              <circle cx="25" cy="55" r="3.5" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="25" cy="55" r="1.5" fill="#f9a825"/>
+              <circle cx="0" cy="55" r="3" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="0" cy="55" r="1.2" fill="#f9a825"/>
+              <circle cx="-50" cy="70" r="3.5" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="-50" cy="70" r="1.5" fill="#f9a825"/>
+              <circle cx="50" cy="70" r="3.5" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="50" cy="70" r="1.5" fill="#f9a825"/>
+              <circle cx="0" cy="75" r="3" fill="#0c0f0a" stroke="#f9a825" strokeWidth="2"/><circle cx="0" cy="75" r="1.2" fill="#f9a825"/>
+              <circle cx="-40" cy="45" r="2.5" fill="#f9a825"/><circle cx="40" cy="45" r="2.5" fill="#f9a825"/>
+              <circle cx="-40" cy="80" r="2" fill="#f9a825" opacity="0.7"/><circle cx="40" cy="80" r="2" fill="#f9a825" opacity="0.7"/>
+              <circle cx="-12" cy="85" r="2" fill="#f9a825" opacity="0.7"/><circle cx="12" cy="85" r="2" fill="#f9a825" opacity="0.7"/>
+            </g>
+            <g transform="translate(310,155)">
+              <text x="0" y="20" fontFamily="Georgia,Palatino,serif" fontSize="68" fontWeight="bold" letterSpacing="-2"><tspan fill="#8bc34a">Dev</tspan><tspan fill="#f9a825">Roots</tspan></text>
+              <line x1="2" y1="34" x2="300" y2="34" stroke="#f9a825" strokeWidth="1" opacity="0.3"/>
+              <circle cx="2" cy="34" r="2" fill="#f9a825" opacity="0.5"/><circle cx="300" cy="34" r="2" fill="#f9a825" opacity="0.5"/>
+              <text x="3" y="58" fontFamily="Helvetica Neue,Arial,sans-serif" fontSize="14.5" fill="#9ca895" letterSpacing="4.5" fontWeight="300">RAPPELZ DEVELOPER COMMUNITY</text>
+            </g>
+          </svg>
+        </div>
         <h1>{t.heroTitle.split(" ").slice(0, -1).join(" ")} <span className="highlight">{t.heroTitle.split(" ").slice(-1)}</span></h1>
         <p>{t.heroDesc}</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
