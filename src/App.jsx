@@ -161,7 +161,8 @@ const getStyles = (dir) => `
 
   .navbar { position: sticky; top: 0; z-index: 100; background: rgba(12,15,10,0.9); backdrop-filter: blur(24px) saturate(1.2); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 66px; display: flex; align-items: center; justify-content: space-between; }
   .nav-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-  .nav-logo { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #4a8c2a); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 2px 12px var(--accent-glow); }
+  .nav-logo { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+  .nav-logo img { width: 100%; height: 100%; object-fit: contain; }
   .nav-brand-text { font-family: var(--font-display); font-size: 1.35rem; }
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-link { padding: 8px 18px; border-radius: var(--radius-xs); color: var(--text-secondary); font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; border: none; background: none; font-family: var(--font-body); position: relative; }
@@ -366,7 +367,7 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
   return (
     <nav className="navbar">
       <div className="nav-brand" onClick={() => setPage("home")}>
-        <div className="nav-logo">🌿</div><span className="nav-brand-text">{t.brand}</span>
+        <div className="nav-logo"><img src="/devroots-logo.png" alt="DevRoots" /></div><span className="nav-brand-text">{t.brand}</span>
       </div>
       <div className="nav-links">
         {["home", "forums", "shop"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>)}
@@ -418,7 +419,7 @@ function Hero({ setPage }) {
     <section className="hero">
       <div className="hero-pattern" />
       <div className="hero-content fade">
-        <div className="hero-badge">🌿 {t.tagline}</div>
+        <div className="hero-badge"><img src="/devroots-logo.png" alt="" style={{ width: 20, height: 20 }} /> {t.tagline}</div>
         <h1>{t.heroTitle.split(" ").slice(0, -1).join(" ")} <span className="highlight">{t.heroTitle.split(" ").slice(-1)}</span></h1>
         <p>{t.heroDesc}</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
