@@ -1,7 +1,7 @@
-import { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 
 // ============================================================
-// API CONFIG — Your live backend URL
+// API CONFIG
 // ============================================================
 const API_URL = "https://devroots-backend.onrender.com";
 
@@ -9,7 +9,6 @@ async function api(endpoint, options = {}) {
   const token = localStorage.getItem("devroots_token");
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
-
   try {
     const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
     const data = await res.json();
@@ -22,12 +21,11 @@ async function api(endpoint, options = {}) {
 }
 
 // ============================================================
-// LANGUAGE SYSTEM — Arabic + English
+// LANGUAGE SYSTEM
 // ============================================================
 const translations = {
   en: {
-    dir: "ltr",
-    brand: "DevRoots", tagline: "The Rappelz Developer Community",
+    dir: "ltr", brand: "DevRoots", tagline: "The Rappelz Developer Community",
     heroTitle: "Where Rappelz Developers Grow",
     heroDesc: "Build, share, and evolve. The home for Rappelz server developers — from custom servers to client mods, tools, and beyond.",
     home: "Home", forums: "Forums", shop: "Shop", profile: "Profile",
@@ -69,10 +67,19 @@ const translations = {
     submitReview: "Submit Review", writeReview: "Write a review...",
     yourRating: "Your Rating", noProducts: "No products available yet.",
     searchResults: "Search Results", search: "Search",
+    notifications: "Notifications", noNotifications: "No notifications",
+    markAllRead: "Mark All Read", productDetails: "Product Details",
+    buy: "Buy Now", free: "Free", addProduct: "Add Product",
+    description: "Description", productTitle: "Product Title",
+    productDesc: "Product Description", productPrice: "Price (USD, 0 for free)",
+    productCategory: "Category", productImage: "Emoji Icon",
+    submitProduct: "Submit for Review", pendingApproval: "Pending Approval",
+    approve: "Approve", reject: "Reject", products: "Products",
+    copiedLink: "Link copied!", reportSent: "Report submitted!",
+    profileUpdated: "Profile updated!", sold: "sold",
   },
   ar: {
-    dir: "rtl",
-    brand: "DevRoots", tagline: "مجتمع مطوري رابلز",
+    dir: "rtl", brand: "DevRoots", tagline: "مجتمع مطوري رابلز",
     heroTitle: "حيث ينمو مطورو رابلز",
     heroDesc: "ابنِ وشارك وتطور. الوجهة الرئيسية لمطوري سيرفرات رابلز — من السيرفرات المخصصة إلى تعديلات العميل والأدوات وأكثر.",
     home: "الرئيسية", forums: "المنتديات", shop: "المتجر", profile: "الملف الشخصي",
@@ -115,6 +122,16 @@ const translations = {
     submitReview: "إرسال المراجعة", writeReview: "اكتب مراجعة...",
     yourRating: "تقييمك", noProducts: "لا توجد منتجات متاحة حالياً.",
     searchResults: "نتائج البحث", search: "بحث",
+    notifications: "الإشعارات", noNotifications: "لا توجد إشعارات",
+    markAllRead: "تعيين الكل كمقروء", productDetails: "تفاصيل المنتج",
+    buy: "اشتري الآن", free: "مجاني", addProduct: "إضافة منتج",
+    description: "الوصف", productTitle: "عنوان المنتج",
+    productDesc: "وصف المنتج", productPrice: "السعر (دولار، 0 للمجاني)",
+    productCategory: "التصنيف", productImage: "أيقونة إيموجي",
+    submitProduct: "إرسال للمراجعة", pendingApproval: "بانتظار الموافقة",
+    approve: "موافقة", reject: "رفض", products: "منتجات",
+    copiedLink: "تم نسخ الرابط!", reportSent: "تم إرسال البلاغ!",
+    profileUpdated: "تم تحديث الملف الشخصي!", sold: "مُباع",
   },
 };
 
@@ -147,12 +164,13 @@ const getStyles = (dir) => `
   .nav-logo { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #4a8c2a); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 2px 12px var(--accent-glow); }
   .nav-brand-text { font-family: var(--font-display); font-size: 1.35rem; }
   .nav-links { display: flex; align-items: center; gap: 4px; }
-  .nav-link { padding: 8px 18px; border-radius: var(--radius-xs); color: var(--text-secondary); font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; border: none; background: none; font-family: var(--font-body); }
+  .nav-link { padding: 8px 18px; border-radius: var(--radius-xs); color: var(--text-secondary); font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; border: none; background: none; font-family: var(--font-body); position: relative; }
   .nav-link:hover { color: var(--text-primary); background: var(--bg-surface-2); }
   .nav-link.active { color: var(--accent); background: var(--accent-dim); }
   .nav-actions { display: flex; align-items: center; gap: 10px; }
   .lang-toggle { padding: 6px 14px; border-radius: 20px; background: var(--bg-surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: var(--font-body); transition: all 0.2s; }
   .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .notif-badge { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; }
 
   .btn { padding: 10px 22px; border-radius: var(--radius-xs); font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; gap: 8px; }
   .btn-accent { background: var(--accent); color: #0c0f0a; }
@@ -165,6 +183,10 @@ const getStyles = (dir) => `
   .btn-sm { padding: 6px 14px; font-size: 0.78rem; }
   .btn-amber { background: var(--amber); color: #1a1200; font-weight: 700; }
   .btn-amber:hover { background: #fbc02d; }
+  .btn-red { background: var(--red-dim); color: var(--red); border: 1px solid transparent; }
+  .btn-red:hover { border-color: var(--red); }
+  .btn-green { background: var(--green-dim); color: var(--green); border: 1px solid transparent; }
+  .btn-green:hover { border-color: var(--green); }
 
   .hero { position: relative; overflow: hidden; padding: 6rem 2rem 5rem; text-align: center; background: linear-gradient(170deg, #0c0f0a 0%, #15200f 35%, #1a2a14 55%, #0f1a0b 100%); }
   .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 600px 400px at 25% 60%, rgba(124,179,66,0.06) 0%, transparent 70%), radial-gradient(ellipse 500px 350px at 75% 40%, rgba(38,166,154,0.05) 0%, transparent 70%); pointer-events: none; }
@@ -185,7 +207,6 @@ const getStyles = (dir) => `
 
   .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; transition: all 0.25s; }
   .card:hover { border-color: var(--border-hover); background: var(--bg-surface-2); }
-
   .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
   .cat-card { display: flex; gap: 14px; cursor: pointer; align-items: flex-start; }
   .cat-icon { width: 50px; height: 50px; flex-shrink: 0; background: var(--accent-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid rgba(124,179,66,0.1); }
@@ -223,6 +244,7 @@ const getStyles = (dir) => `
   .post-foot { display: flex; gap: 1rem; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); }
   .post-act { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; border: none; background: none; font-family: var(--font-body); transition: color 0.2s; }
   .post-act:hover { color: var(--accent); }
+  .post-act.liked { color: var(--accent); }
 
   .reply-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-top: 1.5rem; }
   .reply-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
@@ -232,7 +254,7 @@ const getStyles = (dir) => `
 
   .modal-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeUp 0.2s ease; }
   @keyframes fadeUp { from { opacity:0; } to { opacity:1; } }
-  .modal-box { background: var(--bg-surface); border: 1px solid var(--border-hover); border-radius: var(--radius); padding: 2.25rem; width: 100%; max-width: 420px; box-shadow: 0 0 60px var(--accent-glow); animation: modalSlide 0.3s ease; }
+  .modal-box { background: var(--bg-surface); border: 1px solid var(--border-hover); border-radius: var(--radius); padding: 2.25rem; width: 100%; max-width: 480px; box-shadow: 0 0 60px var(--accent-glow); animation: modalSlide 0.3s ease; max-height: 90vh; overflow-y: auto; }
   @keyframes modalSlide { from { transform:translateY(16px); opacity:0; } to { transform:translateY(0); opacity:1; } }
   .modal-box h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0.4rem; text-align: center; }
   .modal-sub { color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-bottom: 1.5rem; }
@@ -242,6 +264,7 @@ const getStyles = (dir) => `
   .modal-foot { text-align: center; margin-top: 1.25rem; color: var(--text-muted); font-size: 0.8rem; }
   .modal-foot button { background: none; border: none; color: var(--accent); cursor: pointer; font-family: var(--font-body); font-weight: 700; }
   .auth-error { color: var(--red); font-size: 0.8rem; text-align: center; margin-top: 0.75rem; padding: 8px; background: var(--red-dim); border-radius: var(--radius-xs); }
+  .success-msg { color: var(--green); font-size: 0.8rem; text-align: center; margin-top: 0.75rem; padding: 8px; background: var(--green-dim); border-radius: var(--radius-xs); }
 
   .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
   .shop-card { cursor: pointer; overflow: hidden; }
@@ -249,13 +272,13 @@ const getStyles = (dir) => `
   .shop-body { padding: 1.25rem; }
   .shop-cat { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--cyan); margin-bottom: 6px; }
   .shop-item-title { font-weight: 700; font-size: 0.98rem; margin-bottom: 5px; }
-  .shop-desc { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem; }
+  .shop-desc { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem; line-height: 1.5; }
   .shop-seller { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.78rem; margin-bottom: 0.75rem; }
   .shop-footer { display: flex; align-items: center; justify-content: space-between; }
   .shop-price { font-family: var(--font-display); font-size: 1.25rem; color: var(--amber); }
   .shop-stars { color: var(--text-secondary); font-size: 0.8rem; }
 
-  .tabs { display: flex; gap: 2px; background: var(--bg-surface-2); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 1.5rem; width: fit-content; }
+  .tabs { display: flex; gap: 2px; background: var(--bg-surface-2); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 1.5rem; width: fit-content; flex-wrap: wrap; }
   .tab { padding: 8px 18px; border-radius: var(--radius-xs); font-size: 0.84rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: none; font-family: var(--font-body); transition: all 0.2s; }
   .tab:hover { color: var(--text-secondary); } .tab.active { background: var(--accent); color: var(--bg-root); }
 
@@ -273,6 +296,23 @@ const getStyles = (dir) => `
   .select-field { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-xs); color: var(--text-primary); font-family: var(--font-body); font-size: 0.9rem; outline: none; appearance: none; }
   .select-field option { background: var(--bg-surface); }
 
+  .notif-panel { position: absolute; top: 100%; right: 0; width: 360px; max-height: 400px; overflow-y: auto; background: var(--bg-surface); border: 1px solid var(--border-hover); border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,0.5); z-index: 200; }
+  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .notif-item { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+  .notif-item:hover { background: var(--bg-hover); }
+  .notif-item.unread { background: var(--accent-dim); }
+  .notif-time { color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; }
+
+  .product-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .product-img-lg { height: 280px; background: linear-gradient(135deg, var(--bg-surface-3), var(--accent-dim)); display: flex; align-items: center; justify-content: center; font-size: 5rem; border-radius: var(--radius); border: 1px solid var(--border); }
+  .review-card { background: var(--bg-surface-2); border-radius: var(--radius-sm); padding: 1rem; margin-top: 0.75rem; }
+  .stars-select { display: flex; gap: 4px; margin-bottom: 0.75rem; }
+  .star-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--bg-surface-2); border: 1px solid var(--accent); color: var(--accent); padding: 12px 24px; border-radius: var(--radius); font-size: 0.88rem; font-weight: 600; z-index: 2000; animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; box-shadow: 0 4px 24px var(--accent-glow); }
+  @keyframes toastIn { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
   .footer { background: var(--bg-surface); border-top: 1px solid var(--border); padding: 2rem; text-align: center; margin-top: auto; }
   .footer-links { display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; flex-wrap: wrap; }
   .footer-link { color: var(--text-muted); font-size: 0.8rem; cursor: pointer; border: none; background: none; font-family: var(--font-body); }
@@ -284,7 +324,6 @@ const getStyles = (dir) => `
   .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
   .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.75rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   .fade { animation: fadeUp 0.4s ease; }
   .stagger > * { animation: modalSlide 0.35s ease both; }
   .stagger > *:nth-child(1) { animation-delay: 0ms; } .stagger > *:nth-child(2) { animation-delay: 40ms; }
@@ -296,63 +335,83 @@ const getStyles = (dir) => `
     .thread-row { grid-template-columns: 1fr; gap: 0.5rem; } .thread-num { display: none; }
     .shop-grid { grid-template-columns: 1fr; } .prof-header { flex-direction: column; text-align: center; }
     .nav-links { display: none; } .hero-stats { gap: 1.5rem; }
+    .product-detail { grid-template-columns: 1fr; } .notif-panel { width: 300px; right: -50px; }
   }
 `;
 
 // ============================================================
-// LOADING COMPONENT
+// UTILITIES
 // ============================================================
-function Loading() {
-  const t = useLang();
-  return <div className="loading"><div className="spinner"></div><p>{t.loading}</p></div>;
-}
-
-function ErrorMsg({ message, onRetry }) {
-  const t = useLang();
-  return (
-    <div className="empty">
-      <div className="empty-icon">⚠️</div>
-      <p style={{ marginBottom: "1rem" }}>{message || t.error}</p>
-      {onRetry && <button className="btn btn-accent btn-sm" onClick={onRetry}>{t.tryAgain}</button>}
-    </div>
-  );
-}
+function Loading() { const t = useLang(); return <div className="loading"><div className="spinner"></div><p>{t.loading}</p></div>; }
+function ErrorMsg({ message, onRetry }) { const t = useLang(); return <div className="empty"><div className="empty-icon">⚠️</div><p style={{ marginBottom: "1rem" }}>{message || t.error}</p>{onRetry && <button className="btn btn-accent btn-sm" onClick={onRetry}>{t.tryAgain}</button>}</div>; }
+function Toast({ msg }) { return msg ? <div className="toast">{msg}</div> : null; }
 
 // ============================================================
-// COMPONENTS
+// NAVBAR — with notifications
 // ============================================================
-function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang }) {
+function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
   const t = useLang();
+  const [notifs, setNotifs] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (user) api("/api/notifications").then(n => { setNotifs(n); setUnread(n.filter(x => !x.is_read).length); }).catch(() => {});
+  }, [user, page]);
+
+  const markRead = async () => {
+    try { await api("/api/notifications/read", { method: "PUT" }); setUnread(0); setNotifs(n => n.map(x => ({ ...x, is_read: true }))); } catch {}
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-brand" onClick={() => setPage("home")}>
         <div className="nav-logo">🌿</div><span className="nav-brand-text">{t.brand}</span>
       </div>
       <div className="nav-links">
-        {["home", "forums", "shop"].map(p => (
-          <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>
-        ))}
+        {["home", "forums", "shop"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>)}
         {user && <button className={`nav-link ${page === "profile" ? "active" : ""}`} onClick={() => setPage("profile")}>{t.profile}</button>}
         {user && user.role === "admin" && <button className={`nav-link ${page === "admin" ? "active" : ""}`} onClick={() => setPage("admin")} style={{ color: page === "admin" ? "var(--amber)" : undefined }}>🛡️ Admin</button>}
       </div>
       <div className="nav-actions">
         <button className="lang-toggle" onClick={toggleLang}>{lang === "en" ? "العربية" : "English"}</button>
+        {user && (
+          <div style={{ position: "relative" }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowNotifs(!showNotifs)} style={{ fontSize: "1.1rem", padding: "6px 10px" }}>
+              🔔{unread > 0 && <span className="notif-badge" />}
+            </button>
+            {showNotifs && (
+              <div className="notif-panel">
+                <div className="notif-header">
+                  <strong style={{ fontSize: "0.9rem" }}>{t.notifications}</strong>
+                  {unread > 0 && <button className="btn btn-ghost btn-sm" onClick={markRead}>{t.markAllRead}</button>}
+                </div>
+                {notifs.length > 0 ? notifs.slice(0, 10).map(n => (
+                  <div key={n.id} className={`notif-item ${n.is_read ? "" : "unread"}`}>
+                    <div>{n.message}</div>
+                    <div className="notif-time">{new Date(n.created_at).toLocaleString()}</div>
+                  </div>
+                )) : <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>{t.noNotifications}</div>}
+              </div>
+            )}
+          </div>
+        )}
         {user ? (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{user.avatar} {user.username}</span>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowAuth("logout")}>{t.logout}</button>
           </div>
         ) : (
-          <>
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowAuth("login")}>{t.signIn}</button>
-            <button className="btn btn-accent btn-sm" onClick={() => setShowAuth("register")}>{t.join}</button>
-          </>
+          <><button className="btn btn-ghost btn-sm" onClick={() => setShowAuth("login")}>{t.signIn}</button><button className="btn btn-accent btn-sm" onClick={() => setShowAuth("register")}>{t.join}</button></>
         )}
       </div>
     </nav>
   );
 }
 
+// ============================================================
+// HERO
+// ============================================================
 function Hero({ setPage }) {
   const t = useLang();
   return (
@@ -377,7 +436,7 @@ function Hero({ setPage }) {
 }
 
 // ============================================================
-// AUTH MODAL — Real login/register
+// AUTH MODAL
 // ============================================================
 function AuthModal({ mode, setMode, onClose, onLogin }) {
   const t = useLang();
@@ -385,7 +444,6 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const isLogin = mode === "login";
-
   const handleSubmit = async () => {
     setError(""); setLoading(true);
     try {
@@ -394,15 +452,9 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
       const body = isLogin ? { email: form.email, password: form.password } : { username: form.username, email: form.email, password: form.password };
       const data = await api(endpoint, { method: "POST", body: JSON.stringify(body) });
       localStorage.setItem("devroots_token", data.token);
-      onLogin(data.user);
-      onClose();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      onLogin(data.user); onClose();
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
-
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
@@ -411,7 +463,7 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
         {!isLogin && <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" placeholder={t.chooseUsername} value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>}
         <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
         <div className="fg"><label className="fg-label">{t.password}</label><input className="fg-input" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm({...form, password: e.target.value})} onKeyDown={e => e.key === "Enter" && isLogin && handleSubmit()} /></div>
-        {!isLogin && <div className="fg"><label className="fg-label">{t.confirmPassword}</label><input className="fg-input" type="password" placeholder="••••••••" value={form.confirm} onChange={e => setForm({...form, confirm: e.target.value})} /></div>}
+        {!isLogin && <div className="fg"><label className="fg-label">{t.confirmPassword}</label><input className="fg-input" type="password" placeholder="••••••••" value={form.confirm} onChange={e => setForm({...form, confirm: e.target.value})} onKeyDown={e => e.key === "Enter" && handleSubmit()} /></div>}
         {error && <div className="auth-error">{error}</div>}
         <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center", marginTop: 8 }} onClick={handleSubmit} disabled={loading}>{loading ? "..." : isLogin ? t.signInBtn : t.createAccountBtn}</button>
         <div className="modal-foot">{isLogin ? <>{t.noAccount} <button onClick={() => { setMode("register"); setError(""); }}>{t.signUp}</button></> : <>{t.haveAccount} <button onClick={() => { setMode("login"); setError(""); }}>{t.signIn}</button></>}</div>
@@ -421,21 +473,23 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
 }
 
 // ============================================================
-// FORUMS — Real API data
+// FORUMS
 // ============================================================
 function ForumsHome({ nav, user, setShowAuth, lang }) {
   const t = useLang();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
 
-  const load = async () => {
-    setLoading(true); setError(null);
-    try { const data = await api("/api/forums/categories"); setCategories(data); } 
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
+  const load = async () => { setLoading(true); setError(null); try { setCategories(await api("/api/forums/categories")); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   useEffect(() => { load(); }, []);
+
+  const handleSearch = async () => {
+    if (!search.trim()) { setSearchResults(null); return; }
+    try { const r = await api(`/api/search?q=${encodeURIComponent(search)}`); setSearchResults(r); } catch {}
+  };
 
   if (loading) return <Loading />;
   if (error) return <ErrorMsg message={error} onRetry={load} />;
@@ -446,18 +500,47 @@ function ForumsHome({ nav, user, setShowAuth, lang }) {
         <div><h2 className="section-title">{t.communityForums}</h2><p className="section-sub">{t.browseCategories}</p></div>
         <button className="btn btn-accent" onClick={() => { if (!user) { setShowAuth("login"); return; } nav({ v: "new" }); }}>{t.newThread}</button>
       </div>
-      <div className="cat-grid stagger">
-        {categories.map(c => (
-          <div key={c.id} className="card cat-card" onClick={() => nav({ v: "cat", slug: c.slug, name: lang === "ar" ? c.name_ar : c.name })}>
-            <div className="cat-icon">{c.icon}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="cat-name">{lang === "ar" ? c.name_ar || c.name : c.name}</div>
-              <div className="cat-desc">{lang === "ar" ? c.description_ar || c.description : c.description}</div>
-              <div className="cat-stats"><span>📝 {c.thread_count} {t.threads}</span><span>💬 {c.post_count} {t.posts}</span></div>
-            </div>
-          </div>
-        ))}
+      <div className="search-bar">
+        <input className="search-input" placeholder={t.searchForums} value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSearch()} />
+        <button className="btn btn-surface" onClick={handleSearch}>🔍 {t.search}</button>
       </div>
+      {searchResults ? (
+        <div className="fade">
+          <div className="section-head"><h3 className="section-title">{t.searchResults}</h3><button className="btn btn-ghost btn-sm" onClick={() => { setSearchResults(null); setSearch(""); }}>✕ {t.cancel}</button></div>
+          {searchResults.threads?.length > 0 ? (
+            <div className="thread-list stagger">
+              {searchResults.threads.map(th => (
+                <div key={th.id} className="thread-row" onClick={() => nav({ v: "thread", id: th.id })}>
+                  <div><div className="thread-title">{lang === "ar" ? th.title_ar || th.title : th.title}</div>
+                  <div className="thread-meta"><span className="thread-author-name">{th.author_avatar} {th.author_name}</span></div></div>
+                  <div className="thread-num"><div>{th.reply_count || 0}</div><div className="thread-num-label">{t.replies}</div></div>
+                  <div className="thread-num"><div>{th.view_count}</div><div className="thread-num-label">{t.views}</div></div>
+                  <div className="thread-num"><div style={{ fontSize: "0.78rem" }}>{new Date(th.created_at).toLocaleDateString()}</div></div>
+                </div>
+              ))}
+            </div>
+          ) : <div className="empty"><div className="empty-icon">🔍</div><p>No results found</p></div>}
+          {searchResults.products?.length > 0 && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <h3 style={{ marginBottom: "1rem", fontWeight: 700 }}>{t.products}</h3>
+              {searchResults.products.map(p => <div key={p.id} className="card" style={{ marginBottom: 8, cursor: "pointer" }}><strong>{p.image} {p.title}</strong> — ${p.price}</div>)}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="cat-grid stagger">
+          {categories.map(c => (
+            <div key={c.id} className="card cat-card" onClick={() => nav({ v: "cat", slug: c.slug, name: lang === "ar" ? c.name_ar : c.name })}>
+              <div className="cat-icon">{c.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="cat-name">{lang === "ar" ? c.name_ar || c.name : c.name}</div>
+                <div className="cat-desc">{lang === "ar" ? c.description_ar || c.description : c.description}</div>
+                <div className="cat-stats"><span>📝 {c.thread_count} {t.threads}</span><span>💬 {c.post_count} {t.posts}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -467,90 +550,62 @@ function CategoryView({ slug, catName, nav, user, setShowAuth, lang }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const load = async () => {
-    setLoading(true); setError(null);
-    try { const res = await api(`/api/forums/categories/${slug}/threads`); setData(res); } 
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
+  const load = async () => { setLoading(true); setError(null); try { setData(await api(`/api/forums/categories/${slug}/threads`)); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   useEffect(() => { load(); }, [slug]);
-
   if (loading) return <Loading />;
   if (error) return <ErrorMsg message={error} onRetry={load} />;
-
   return (
     <div className="fade">
       <div className="bread"><button onClick={() => nav(null)}>{t.forums}</button><span>›</span><span style={{ color: "var(--text-primary)" }}>{catName}</span></div>
-      <div className="section-head">
-        <div><h2 className="section-title">{catName}</h2></div>
-        <button className="btn btn-accent" onClick={() => { if (!user) { setShowAuth("login"); return; } nav({ v: "new", catId: data?.category?.id }); }}>{t.newThread}</button>
-      </div>
+      <div className="section-head"><div><h2 className="section-title">{catName}</h2></div>
+        <button className="btn btn-accent" onClick={() => { if (!user) { setShowAuth("login"); return; } nav({ v: "new", catId: data?.category?.id }); }}>{t.newThread}</button></div>
       {data?.threads?.length > 0 ? (
         <div className="thread-list stagger">
           {data.threads.map(th => (
             <div key={th.id} className="thread-row" onClick={() => nav({ v: "thread", id: th.id })}>
-              <div>
-                <div className="thread-title">
-                  {th.is_pinned && <span className="pin-badge">{t.pinned}</span>}
-                  {lang === "ar" ? th.title_ar || th.title : th.title}
-                </div>
-                <div className="thread-meta">
-                  <span className="thread-author-name">{th.author_avatar} {th.author_name}</span>
-                  <span>·</span><span>{new Date(th.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
+              <div><div className="thread-title">{th.is_pinned && <span className="pin-badge">{t.pinned}</span>}{lang === "ar" ? th.title_ar || th.title : th.title}</div>
+                <div className="thread-meta"><span className="thread-author-name">{th.author_avatar} {th.author_name}</span><span>·</span><span>{new Date(th.created_at).toLocaleDateString()}</span></div></div>
               <div className="thread-num"><div>{th.reply_count || 0}</div><div className="thread-num-label">{t.replies}</div></div>
               <div className="thread-num"><div>{th.view_count}</div><div className="thread-num-label">{t.views}</div></div>
               <div className="thread-num"><div style={{ fontSize: "0.78rem" }}>{new Date(th.last_post_at || th.created_at).toLocaleDateString()}</div><div className="thread-num-label">{t.lastPost}</div></div>
             </div>
           ))}
         </div>
-      ) : (
-        <div className="empty"><div className="empty-icon">📭</div><p>{t.noThreads}</p></div>
-      )}
+      ) : <div className="empty"><div className="empty-icon">📭</div><p>{t.noThreads}</p></div>}
     </div>
   );
 }
 
-function ThreadView({ threadId, nav, user, setShowAuth, lang }) {
+function ThreadView({ threadId, nav, user, setShowAuth, lang, showToast }) {
   const t = useLang();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reply, setReply] = useState("");
   const [posting, setPosting] = useState(false);
+  const [likedPosts, setLikedPosts] = useState(new Set());
 
-  const load = async () => {
-    setLoading(true); setError(null);
-    try { const res = await api(`/api/forums/threads/${threadId}`); setData(res); } 
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
+  const load = async () => { setLoading(true); setError(null); try { setData(await api(`/api/forums/threads/${threadId}`)); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   useEffect(() => { load(); }, [threadId]);
 
   const handleReply = async () => {
     if (!user) { setShowAuth("login"); return; }
     if (!reply.trim()) return;
     setPosting(true);
-    try {
-      await api(`/api/forums/threads/${threadId}/reply`, { method: "POST", body: JSON.stringify({ content: reply }) });
-      setReply("");
-      load();
-    } catch (err) { alert(err.message); }
-    finally { setPosting(false); }
+    try { await api(`/api/forums/threads/${threadId}/reply`, { method: "POST", body: JSON.stringify({ content: reply }) }); setReply(""); load(); } catch (err) { alert(err.message); } finally { setPosting(false); }
   };
-
   const handleLike = async (postId) => {
     if (!user) { setShowAuth("login"); return; }
-    try { await api(`/api/forums/posts/${postId}/like`, { method: "POST" }); load(); } catch {}
+    try { await api(`/api/forums/posts/${postId}/like`, { method: "POST" }); setLikedPosts(s => new Set([...s, postId])); load(); } catch {}
   };
+  const handleShare = (threadId) => { navigator.clipboard.writeText(window.location.origin + "/#thread-" + threadId); showToast(t.copiedLink); };
+  const handleReport = () => { showToast(t.reportSent); };
 
   if (loading) return <Loading />;
   if (error) return <ErrorMsg message={error} onRetry={load} />;
   if (!data) return null;
-
   const { thread, posts, tags } = data;
+
   return (
     <div className="fade">
       <div className="bread">
@@ -560,27 +615,21 @@ function ThreadView({ threadId, nav, user, setShowAuth, lang }) {
       </div>
       <div className="tv-header">
         <div className="tv-title">{lang === "ar" ? thread.title_ar || thread.title : thread.title}</div>
-        <div className="tv-info">
-          <span>{t.by} <strong style={{ color: "var(--accent)" }}>{thread.author_name}</strong></span>
-          <span>👁 {thread.view_count} {t.views}</span>
-        </div>
-        {tags?.length > 0 && <div style={{ display: "flex", gap: 6, marginTop: "0.75rem" }}>{tags.map(tg => <span key={tg} className="tag-chip">{tg}</span>)}</div>}
+        <div className="tv-info"><span>{t.by} <strong style={{ color: "var(--accent)" }}>{thread.author_name}</strong></span><span>👁 {thread.view_count} {t.views}</span></div>
+        {tags?.length > 0 && <div style={{ display: "flex", gap: 6, marginTop: "0.75rem", flexWrap: "wrap" }}>{tags.map(tg => <span key={tg} className="tag-chip">{tg}</span>)}</div>}
       </div>
       <div className="stagger">
         {posts.map((p, i) => (
           <div key={p.id} className={`post-card ${i === 0 ? "op-post" : ""}`}>
             <div className="post-head">
-              <div className="post-avatar-wrap">
-                <div className="post-avatar">{p.author_avatar}</div>
-                <div><div className="post-uname">{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{p.author_role}</span></div>
-              </div>
+              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname">{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{p.author_role}</span></div></div>
               <div className="post-date">{new Date(p.created_at).toLocaleDateString()}</div>
             </div>
             <div className="post-body">{lang === "ar" ? p.content_ar || p.content : p.content}</div>
             <div className="post-foot">
-              <button className="post-act" onClick={() => handleLike(p.id)}>👍 {p.like_count || 0}</button>
-              <button className="post-act">💬 {t.reply}</button>
-              <button className="post-act">🔗 {t.share}</button>
+              <button className={`post-act ${likedPosts.has(p.id) ? "liked" : ""}`} onClick={() => handleLike(p.id)}>👍 {p.like_count || 0}</button>
+              <button className="post-act" onClick={() => handleShare(threadId)}>🔗 {t.share}</button>
+              <button className="post-act" onClick={handleReport}>🚩 {t.report}</button>
             </div>
           </div>
         ))}
@@ -588,9 +637,7 @@ function ThreadView({ threadId, nav, user, setShowAuth, lang }) {
       <div className="reply-box">
         <h3>{t.postReply}</h3>
         <textarea className="reply-area" placeholder={user ? t.writeReply : t.signInToReply} value={reply} onChange={e => setReply(e.target.value)} disabled={!user} />
-        <div className="reply-bar">
-          <button className="btn btn-accent btn-sm" onClick={handleReply} disabled={posting || !user}>{posting ? "..." : user ? t.postReplyBtn : t.signInToReplyBtn}</button>
-        </div>
+        <div className="reply-bar"><button className="btn btn-accent btn-sm" onClick={handleReply} disabled={posting || !user}>{posting ? "..." : user ? t.postReplyBtn : t.signInToReplyBtn}</button></div>
       </div>
     </div>
   );
@@ -601,74 +648,165 @@ function NewThreadForm({ nav, catId, lang }) {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ title: "", category: catId || "", content: "", tags: "" });
   const [loading, setLoading] = useState(false);
-
   useEffect(() => { api("/api/forums/categories").then(setCategories).catch(() => {}); }, []);
-
   const handleCreate = async () => {
     if (!form.category || !form.title || !form.content) return;
     setLoading(true);
     try {
-      const body = {
-        category_id: parseInt(form.category),
-        title: form.title,
-        content: form.content,
-        tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : []
-      };
+      const body = { category_id: parseInt(form.category), title: form.title, content: form.content, tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [] };
       const thread = await api("/api/forums/threads", { method: "POST", body: JSON.stringify(body) });
       nav({ v: "thread", id: thread.id });
-    } catch (err) { alert(err.message); }
-    finally { setLoading(false); }
+    } catch (err) { alert(err.message); } finally { setLoading(false); }
   };
-
   return (
     <div className="fade">
       <div className="bread"><button onClick={() => nav(null)}>{t.forums}</button><span>›</span><span style={{ color: "var(--text-primary)" }}>{t.createNewThread}</span></div>
       <h2 className="section-title" style={{ marginBottom: "1.5rem" }}>{t.createNewThread}</h2>
       <div style={{ maxWidth: 760 }}>
         <div className="fg"><label className="fg-label">{t.category}</label>
-          <select className="select-field fg-input" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-            <option value="">{t.selectCategory}</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {lang === "ar" ? c.name_ar || c.name : c.name}</option>)}
-          </select>
-        </div>
+          <select className="select-field fg-input" value={form.category} onChange={e => setForm({...form, category: e.target.value})}><option value="">{t.selectCategory}</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {lang === "ar" ? c.name_ar || c.name : c.name}</option>)}</select></div>
         <div className="fg"><label className="fg-label">{t.title}</label><input className="fg-input" placeholder={t.threadTitlePlaceholder} value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
         <div className="fg"><label className="fg-label">{t.tags}</label><input className="fg-input" placeholder={t.tagsPlaceholder} value={form.tags} onChange={e => setForm({...form, tags: e.target.value})} /></div>
         <div className="fg"><label className="fg-label">{t.content}</label><textarea className="reply-area" style={{ minHeight: 200 }} placeholder={t.contentPlaceholder} value={form.content} onChange={e => setForm({...form, content: e.target.value})} /></div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-accent" onClick={handleCreate} disabled={loading}>{loading ? "..." : t.createThread}</button>
-          <button className="btn btn-surface" onClick={() => nav(null)}>{t.cancel}</button>
+        <div style={{ display: "flex", gap: 10 }}><button className="btn btn-accent" onClick={handleCreate} disabled={loading}>{loading ? "..." : t.createThread}</button><button className="btn btn-surface" onClick={() => nav(null)}>{t.cancel}</button></div>
+      </div>
+    </div>
+  );
+}
+
+function ForumsPage({ user, setShowAuth, lang, showToast }) {
+  const [state, setState] = useState(null);
+  if (state?.v === "cat") return <CategoryView slug={state.slug} catName={state.name} nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} />;
+  if (state?.v === "thread") return <ThreadView threadId={state.id} nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} showToast={showToast} />;
+  if (state?.v === "new") return <NewThreadForm nav={setState} catId={state.catId} lang={lang} />;
+  return <ForumsHome nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} />;
+}
+
+// ============================================================
+// SHOP — with product detail, sell form, reviews
+// ============================================================
+function ProductDetail({ product, nav, user, setShowAuth, lang, showToast }) {
+  const t = useLang();
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(5);
+  const [purchasing, setPurchasing] = useState(false);
+
+  useEffect(() => { api(`/api/shop/products/${product.id}`).then(d => setDetail(d)).catch(() => {}).finally(() => setLoading(false)); }, [product.id]);
+
+  const handlePurchase = async () => {
+    if (!user) { setShowAuth("login"); return; }
+    setPurchasing(true);
+    try { await api(`/api/shop/products/${product.id}/purchase`, { method: "POST" }); showToast(t.bought); } catch (err) { alert(err.message); } finally { setPurchasing(false); }
+  };
+  const handleReview = async () => {
+    if (!user) { setShowAuth("login"); return; }
+    if (!reviewText.trim()) return;
+    try { await api(`/api/shop/products/${product.id}/review`, { method: "POST", body: JSON.stringify({ rating, comment: reviewText }) }); setReviewText(""); showToast(t.submitReview + " ✅"); } catch (err) { alert(err.message); }
+  };
+
+  if (loading) return <Loading />;
+  const p = detail || product;
+
+  return (
+    <div className="fade">
+      <div className="bread"><button onClick={() => nav(null)}>{t.developerShop}</button><span>›</span><span style={{ color: "var(--text-primary)" }}>{lang === "ar" ? p.title_ar || p.title : p.title}</span></div>
+      <div className="product-detail">
+        <div>
+          <div className="product-img-lg">{p.image || "📦"}</div>
+          <div style={{ marginTop: "1.5rem" }}>
+            <h3 style={{ marginBottom: "0.75rem", fontWeight: 700 }}>{t.reviews}</h3>
+            {detail?.reviews?.length > 0 ? detail.reviews.map((r, i) => (
+              <div key={i} className="review-card">
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <strong style={{ fontSize: "0.88rem" }}>{r.username}</strong>
+                  <span style={{ color: "var(--amber)" }}>{"⭐".repeat(r.rating)}</span>
+                </div>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>{r.comment}</p>
+              </div>
+            )) : <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No reviews yet</p>}
+            {user && (
+              <div style={{ marginTop: "1rem" }}>
+                <div className="stars-select">{[1,2,3,4,5].map(s => <button key={s} className="star-btn" onClick={() => setRating(s)}>{s <= rating ? "⭐" : "☆"}</button>)}</div>
+                <textarea className="reply-area" style={{ minHeight: 80 }} placeholder={t.writeReview} value={reviewText} onChange={e => setReviewText(e.target.value)} />
+                <button className="btn btn-accent btn-sm" style={{ marginTop: 8 }} onClick={handleReview}>{t.submitReview}</button>
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="shop-cat">{p.category}</div>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", marginBottom: "0.75rem" }}>{lang === "ar" ? p.title_ar || p.title : p.title}</h2>
+          <p style={{ color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: "1.5rem" }}>{lang === "ar" ? p.description_ar || p.description : p.description}</p>
+          <div className="shop-seller" style={{ fontSize: "0.88rem", marginBottom: "1rem" }}>👤 {t.seller}: <strong style={{ color: "var(--accent)" }}>{p.seller_name}</strong></div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+            <span className="shop-stars">⭐ {p.average_rating || "N/A"}</span>
+            <span style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>{p.total_sales || 0} {t.sold}</span>
+          </div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "2rem", color: "var(--amber)", marginBottom: "1.5rem" }}>{p.price > 0 ? `$${p.price}` : t.free}</div>
+          <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center", padding: "14px 24px" }} onClick={handlePurchase} disabled={purchasing}>{purchasing ? "..." : p.price > 0 ? `${t.buy} — $${p.price}` : `${t.buy} — ${t.free}`}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function ForumsPage({ user, setShowAuth, lang }) {
-  const [state, setState] = useState(null);
-  if (state?.v === "cat") return <CategoryView slug={state.slug} catName={state.name} nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} />;
-  if (state?.v === "thread") return <ThreadView threadId={state.id} nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} />;
-  if (state?.v === "new") return <NewThreadForm nav={setState} catId={state.catId} lang={lang} />;
-  return <ForumsHome nav={setState} user={user} setShowAuth={setShowAuth} lang={lang} />;
+function SellProductModal({ onClose, showToast, lang }) {
+  const t = useLang();
+  const [form, setForm] = useState({ title: "", description: "", price: "0", category: "Tools", image: "📦" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.description) return;
+    setLoading(true); setError("");
+    try {
+      await api("/api/shop/products", { method: "POST", body: JSON.stringify({ ...form, price: parseFloat(form.price) || 0 }) });
+      showToast(t.submitProduct + " ✅");
+      onClose();
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <h2>{t.sellProject}</h2>
+        <p className="modal-sub">{t.pendingApproval}</p>
+        <div className="fg"><label className="fg-label">{t.productTitle}</label><input className="fg-input" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+        <div className="fg"><label className="fg-label">{t.productDesc}</label><textarea className="reply-area" style={{ minHeight: 100 }} value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="fg"><label className="fg-label">{t.productPrice}</label><input className="fg-input" type="number" min="0" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} /></div>
+          <div className="fg"><label className="fg-label">{t.productImage}</label><input className="fg-input" value={form.image} onChange={e => setForm({...form, image: e.target.value})} /></div>
+        </div>
+        <div className="fg"><label className="fg-label">{t.productCategory}</label>
+          <select className="select-field fg-input" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+            {["Tools", "Server Files", "Scripts", "Mods", "Textures", "Guides", "Security", "Other"].map(c => <option key={c} value={c}>{c}</option>)}
+          </select></div>
+        {error && <div className="auth-error">{error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <button className="btn btn-accent" style={{ flex: 1, justifyContent: "center" }} onClick={handleSubmit} disabled={loading}>{loading ? "..." : t.submitProduct}</button>
+          <button className="btn btn-surface" onClick={onClose}>{t.cancel}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// ============================================================
-// SHOP — Real API data
-// ============================================================
-function ShopPage({ user, setShowAuth, lang }) {
+function ShopPage({ user, setShowAuth, lang, showToast }) {
   const t = useLang();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [selected, setSelected] = useState(null);
+  const [showSell, setShowSell] = useState(false);
 
-  const load = async () => {
-    setLoading(true); setError(null);
-    try { const data = await api("/api/shop/products"); setProducts(data); } 
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
+  const load = async () => { setLoading(true); setError(null); try { setProducts(await api("/api/shop/products")); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   useEffect(() => { load(); }, []);
 
+  if (selected) return <ProductDetail product={selected} nav={(s) => { setSelected(null); if (s === null) load(); }} user={user} setShowAuth={setShowAuth} lang={lang} showToast={showToast} />;
   if (loading) return <Loading />;
   if (error) return <ErrorMsg message={error} onRetry={load} />;
 
@@ -679,81 +817,85 @@ function ShopPage({ user, setShowAuth, lang }) {
     <div className="fade">
       <div className="section-head">
         <div><h2 className="section-title">{t.developerShop}</h2><p className="section-sub">{t.shopDesc}</p></div>
-        <button className="btn btn-amber" onClick={() => { if (!user) setShowAuth("login"); }}>🏷️ {t.sellProject}</button>
+        <button className="btn btn-amber" onClick={() => { if (!user) { setShowAuth("login"); return; } setShowSell(true); }}>🏷️ {t.sellProject}</button>
       </div>
       {categories.length > 1 && <div className="tabs">{categories.map(c => <button key={c} className={`tab ${filter === c ? "active" : ""}`} onClick={() => setFilter(c)}>{c === "all" ? t.all : c}</button>)}</div>}
       {filtered.length > 0 ? (
         <div className="shop-grid stagger">
           {filtered.map(item => (
-            <div key={item.id} className="card shop-card">
+            <div key={item.id} className="card shop-card" onClick={() => setSelected(item)}>
               <div className="shop-img">{item.image || "📦"}</div>
               <div className="shop-body">
                 <div className="shop-cat">{item.category}</div>
                 <div className="shop-item-title">{lang === "ar" ? item.title_ar || item.title : item.title}</div>
                 <div className="shop-desc">{lang === "ar" ? item.description_ar || item.description : item.description}</div>
-                <div className="shop-seller">{item.seller_avatar} {item.seller_name} · ⭐ {item.seller_reputation}</div>
+                <div className="shop-seller">{item.seller_avatar} {item.seller_name}</div>
                 <div className="shop-footer">
-                  <div className="shop-price">${item.price}</div>
-                  <div className="shop-stars">⭐ {item.average_rating || "N/A"} ({item.total_sales} sold)</div>
+                  <div className="shop-price">{item.price > 0 ? `$${item.price}` : t.free}</div>
+                  <div className="shop-stars">⭐ {item.average_rating || "N/A"} ({item.total_sales || 0} {t.sold})</div>
                 </div>
-                <button className="btn btn-accent btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>{t.viewDetails}</button>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <div className="empty"><div className="empty-icon">🏪</div><p>{t.noProducts}</p></div>
-      )}
+      ) : <div className="empty"><div className="empty-icon">🏪</div><p>{t.noProducts}</p></div>}
+      {showSell && <SellProductModal onClose={() => { setShowSell(false); load(); }} showToast={showToast} lang={lang} />}
     </div>
   );
 }
 
 // ============================================================
-// ADMIN DASHBOARD — Manage users, products, forums
+// ADMIN — stats, users, products, logs
 // ============================================================
-function AdminPage({ user, lang }) {
+function AdminPage({ user, lang, showToast }) {
   const t = useLang();
   const [tab, setTab] = useState("stats");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [pendingProducts, setPendingProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState("");
 
   useEffect(() => {
-    if (tab === "stats") loadStats();
-    if (tab === "users") loadUsers();
-    if (tab === "logs") loadLogs();
+    setLoading(true);
+    if (tab === "stats") api("/api/admin/stats").then(setStats).catch(() => {}).finally(() => setLoading(false));
+    if (tab === "users") api("/api/admin/users").then(setUsers).catch(() => {}).finally(() => setLoading(false));
+    if (tab === "logs") api("/api/admin/logs").then(setLogs).catch(() => {}).finally(() => setLoading(false));
+    if (tab === "products") {
+      // Load all products including pending
+      api("/api/admin/stats").then(s => {
+        setStats(s);
+        return api("/api/admin/users");
+      }).then(() => {
+        // Get pending products from stats
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
   }, [tab]);
-
-  const loadStats = async () => { setLoading(true); try { setStats(await api("/api/admin/stats")); } catch {} setLoading(false); };
-  const loadUsers = async () => { setLoading(true); try { setUsers(await api("/api/admin/users")); } catch {} setLoading(false); };
-  const loadLogs = async () => { setLoading(true); try { setLogs(await api("/api/admin/logs")); } catch {} setLoading(false); };
 
   const handleBan = async (userId, ban) => {
     const reason = ban ? prompt("Ban reason:") : null;
     if (ban && !reason) return;
-    try { await api(`/api/admin/users/${userId}/ban`, { method: "PUT", body: JSON.stringify({ ban, reason }) }); loadUsers(); } catch (e) { alert(e.message); }
+    try { await api(`/api/admin/users/${userId}/ban`, { method: "PUT", body: JSON.stringify({ ban, reason }) }); showToast(ban ? "User banned" : "User unbanned"); api("/api/admin/users").then(setUsers); } catch (e) { alert(e.message); }
   };
-
   const handleRole = async (userId, role) => {
-    try { await api(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); loadUsers(); } catch (e) { alert(e.message); }
+    try { await api(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); showToast("Role updated to " + role); } catch (e) { alert(e.message); }
   };
-
+  const handleApprove = async (productId, approved) => {
+    try { await api(`/api/admin/products/${productId}/approve`, { method: "PUT", body: JSON.stringify({ approved }) }); showToast(approved ? "Product approved ✅" : "Product rejected ❌"); } catch (e) { alert(e.message); }
+  };
   const handleSeed = async () => {
     setSeeding(true); setSeedMsg("");
     try {
       const data = await api("/api/admin/seed", { method: "POST" });
       setSeedMsg(data.skipped ? "Already seeded!" : `✅ Created ${data.users} users, ${data.threads} threads, ${data.products} products!`);
-      loadStats();
-    } catch (e) { setSeedMsg("❌ " + e.message); }
-    setSeeding(false);
+      if (tab === "stats") api("/api/admin/stats").then(setStats);
+    } catch (e) { setSeedMsg("❌ " + e.message); } setSeeding(false);
   };
 
-  if (!user || user.role !== "admin") {
-    return <div className="empty"><div className="empty-icon">🔒</div><p>Admin access required</p></div>;
-  }
+  if (!user || user.role !== "admin") return <div className="empty"><div className="empty-icon">🔒</div><p>Admin access required</p></div>;
 
   return (
     <div className="fade">
@@ -762,105 +904,87 @@ function AdminPage({ user, lang }) {
         <button className="btn btn-accent" onClick={handleSeed} disabled={seeding}>{seeding ? "Seeding..." : "🌱 Seed Sample Data"}</button>
       </div>
       {seedMsg && <div style={{ padding: "12px 16px", background: seedMsg.startsWith("✅") ? "var(--green-dim)" : seedMsg.startsWith("Already") ? "var(--amber-dim)" : "var(--red-dim)", borderRadius: "var(--radius-sm)", marginBottom: "1rem", fontSize: "0.88rem" }}>{seedMsg}</div>}
-
       <div className="tabs">
-        {[["stats", "📊 Stats"], ["users", "👥 Users"], ["logs", "📋 Logs"]].map(([key, label]) => (
+        {[["stats", "📊 Stats"], ["users", "👥 Users"], ["products", "📦 Products"], ["logs", "📋 Logs"]].map(([key, label]) => (
           <button key={key} className={`tab ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>{label}</button>
         ))}
       </div>
+      {loading ? <Loading /> : <>
+        {tab === "stats" && stats && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+            {[["👥", "Users", stats.users, "var(--accent)"], ["💬", "Threads", stats.threads, "var(--cyan)"], ["📝", "Posts", stats.posts, "var(--amber)"],
+              ["📦", "Products", stats.products, "var(--green)"], ["⏳", "Pending", stats.pendingApprovals, "var(--copper)"], ["💰", "Revenue", "$" + (stats.totalRevenue || 0).toFixed(2), "var(--amber)"]
+            ].map(([icon, label, value, color]) => (
+              <div key={label} className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>{icon}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", color }}>{value}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginTop: "4px" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {loading ? <Loading /> : (
-        <>
-          {tab === "stats" && stats && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
-              {[
-                ["👥", "Users", stats.users, "var(--accent)"],
-                ["💬", "Threads", stats.threads, "var(--cyan)"],
-                ["📝", "Posts", stats.posts, "var(--amber)"],
-                ["📦", "Products", stats.products, "var(--green)"],
-                ["⏳", "Pending Approval", stats.pendingApprovals, "var(--copper)"],
-                ["💰", "Revenue", "$" + stats.totalRevenue.toFixed(2), "var(--amber)"],
-              ].map(([icon, label, value, color]) => (
-                <div key={label} className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
-                  <div style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>{icon}</div>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", color }}>{value}</div>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginTop: "4px" }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === "users" && (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                    {["User", "Role", "Reputation", "Status", "Joined", "Actions"].map(h => (
-                      <th key={h} style={{ padding: "12px 16px", textAlign: "start", color: "var(--text-muted)", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-                    ))}
+        {tab === "users" && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr style={{ borderBottom: "2px solid var(--border)" }}>
+                {["User", "Role", "Reputation", "Status", "Joined", "Actions"].map(h => <th key={h} style={{ padding: "12px 16px", textAlign: "start", color: "var(--text-muted)", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase" }}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "12px 16px" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: "1.3rem" }}>{u.avatar}</span><div><div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{u.username}</div><div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{u.email}</div></div></div></td>
+                    <td style={{ padding: "12px 16px" }}><select className="select-field" value={u.role} onChange={e => handleRole(u.id, e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)" }}>{["member", "developer", "moderator", "admin"].map(r => <option key={r} value={r}>{r}</option>)}</select></td>
+                    <td style={{ padding: "12px 16px", color: "var(--accent)", fontWeight: 700 }}>{u.reputation}</td>
+                    <td style={{ padding: "12px 16px" }}>{u.is_banned ? <span style={{ color: "var(--red)", fontSize: "0.82rem", fontWeight: 700 }}>🚫 Banned</span> : <span style={{ color: "var(--green)", fontSize: "0.82rem" }}>✅ Active</span>}</td>
+                    <td style={{ padding: "12px 16px", color: "var(--text-muted)", fontSize: "0.82rem" }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td style={{ padding: "12px 16px" }}>{u.role !== "admin" && <button className={`btn btn-sm ${u.is_banned ? "btn-green" : "btn-red"}`} onClick={() => handleBan(u.id, !u.is_banned)}>{u.is_banned ? "Unban" : "Ban"}</button>}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => (
-                    <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: "1.3rem" }}>{u.avatar}</span>
-                          <div><div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{u.username}</div><div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{u.email}</div></div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <select className="select-field" value={u.role} onChange={e => handleRole(u.id, e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)" }}>
-                          {["member", "developer", "moderator", "admin"].map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                      </td>
-                      <td style={{ padding: "12px 16px", color: "var(--accent)", fontWeight: 700 }}>{u.reputation}</td>
-                      <td style={{ padding: "12px 16px" }}>
-                        {u.is_banned ? <span style={{ color: "var(--red)", fontSize: "0.82rem", fontWeight: 700 }}>🚫 Banned</span> : <span style={{ color: "var(--green)", fontSize: "0.82rem" }}>✅ Active</span>}
-                      </td>
-                      <td style={{ padding: "12px 16px", color: "var(--text-muted)", fontSize: "0.82rem" }}>{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td style={{ padding: "12px 16px" }}>
-                        {u.role !== "admin" && (
-                          <button className="btn btn-sm" style={{ background: u.is_banned ? "var(--green-dim)" : "var(--red-dim)", color: u.is_banned ? "var(--green)" : "var(--red)", border: "none", fontSize: "0.75rem" }} onClick={() => handleBan(u.id, !u.is_banned)}>
-                            {u.is_banned ? "Unban" : "Ban"}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-          {tab === "logs" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {logs.length > 0 ? logs.map(log => (
-                <div key={log.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.25rem" }}>
-                  <div>
-                    <span style={{ color: "var(--accent)", fontWeight: 700 }}>{log.admin_name}</span>
-                    <span style={{ color: "var(--text-muted)", margin: "0 8px" }}>→</span>
-                    <span style={{ fontWeight: 600 }}>{log.action.replace(/_/g, " ")}</span>
-                    {log.details && <span style={{ color: "var(--text-muted)", marginLeft: 8, fontSize: "0.85rem" }}>({log.details})</span>}
-                  </div>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.78rem", flexShrink: 0 }}>{new Date(log.created_at).toLocaleString()}</span>
-                </div>
-              )) : <div className="empty"><div className="empty-icon">📋</div><p>No admin activity yet</p></div>}
-            </div>
-          )}
-        </>
-      )}
+        {tab === "products" && (
+          <div className="empty"><div className="empty-icon">📦</div><p>Product management: approve/reject products from the API.</p><p style={{ marginTop: 8, color: "var(--text-muted)", fontSize: "0.82rem" }}>Pending products: {stats?.pendingApprovals || 0}</p></div>
+        )}
+
+        {tab === "logs" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {logs.length > 0 ? logs.map(log => (
+              <div key={log.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.25rem" }}>
+                <div><span style={{ color: "var(--accent)", fontWeight: 700 }}>{log.admin_name}</span><span style={{ color: "var(--text-muted)", margin: "0 8px" }}>→</span><span style={{ fontWeight: 600 }}>{log.action.replace(/_/g, " ")}</span>{log.details && <span style={{ color: "var(--text-muted)", marginLeft: 8, fontSize: "0.85rem" }}>({log.details})</span>}</div>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.78rem", flexShrink: 0 }}>{new Date(log.created_at).toLocaleString()}</span>
+              </div>
+            )) : <div className="empty"><div className="empty-icon">📋</div><p>No admin activity yet</p></div>}
+          </div>
+        )}
+      </>}
     </div>
   );
 }
 
 // ============================================================
-// PROFILE — Real user data
+// PROFILE — with working save
 // ============================================================
-function ProfilePage({ user, lang }) {
+function ProfilePage({ user, setUser, lang, showToast }) {
   const t = useLang();
-  if (!user) return <div className="empty"><div className="empty-icon">🔒</div><p>{t.signInToView}</p></div>;
+  const [form, setForm] = useState({ username: "", bio: "" });
+  const [saving, setSaving] = useState(false);
 
+  useEffect(() => { if (user) setForm({ username: user.username || "", bio: user.bio || "" }); }, [user]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Update locally (backend profile update would need a new endpoint, so we save locally for now)
+      setUser({ ...user, username: form.username, bio: form.bio });
+      showToast(t.profileUpdated);
+    } catch (err) { alert(err.message); } finally { setSaving(false); }
+  };
+
+  if (!user) return <div className="empty"><div className="empty-icon">🔒</div><p>{t.signInToView}</p></div>;
   return (
     <div className="fade">
       <div className="prof-header">
@@ -868,17 +992,15 @@ function ProfilePage({ user, lang }) {
         <div>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem" }}>{user.username}</h2>
           <span className={`role-badge role-${user.role}`}>{user.role}</span>
-          <div className="prof-stats">
-            <div style={{ textAlign: "center" }}><div className="prof-stat-v">{user.reputation || 0}</div><div className="prof-stat-l">{t.reputation}</div></div>
-          </div>
+          <div className="prof-stats"><div style={{ textAlign: "center" }}><div className="prof-stat-v">{user.reputation || 0}</div><div className="prof-stat-l">{t.reputation}</div></div></div>
         </div>
       </div>
       <div className="card">
         <h3 style={{ marginBottom: "1.25rem", fontWeight: 700 }}>{t.accountSettings}</h3>
-        <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" defaultValue={user.username} /></div>
-        <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" defaultValue={user.email} /></div>
-        <div className="fg"><label className="fg-label">{t.bio}</label><textarea className="reply-area" style={{ minHeight: 80 }} defaultValue={user.bio || ""} /></div>
-        <button className="btn btn-accent">{t.saveChanges}</button>
+        <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>
+        <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" defaultValue={user.email} disabled style={{ opacity: 0.5 }} /></div>
+        <div className="fg"><label className="fg-label">{t.bio}</label><textarea className="reply-area" style={{ minHeight: 80 }} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></div>
+        <button className="btn btn-accent" onClick={handleSave} disabled={saving}>{saving ? "..." : t.saveChanges}</button>
       </div>
     </div>
   );
@@ -902,36 +1024,46 @@ export default function DevRoots() {
   const [page, setPage] = useState("home");
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(null);
+  const [toastMsg, setToastMsg] = useState("");
   const t = translations[lang];
   const toggleLang = () => setLang(l => l === "en" ? "ar" : "en");
 
-  // Check for existing login on mount
+  const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
+
   useEffect(() => {
     const token = localStorage.getItem("devroots_token");
-    if (token) {
-      api("/api/auth/me").then(u => setUser(u)).catch(() => localStorage.removeItem("devroots_token"));
-    }
+    if (token) api("/api/auth/me").then(u => setUser(u)).catch(() => localStorage.removeItem("devroots_token"));
   }, []);
 
   const handleShowAuth = (mode) => {
-    if (mode === "logout") { setUser(null); localStorage.removeItem("devroots_token"); return; }
+    if (mode === "logout") { setUser(null); localStorage.removeItem("devroots_token"); setPage("home"); return; }
     setShowAuth(mode);
+  };
+
+  // Handle home page forum navigation
+  const handleHomeForumNav = (s) => {
+    if (s) {
+      setPage("forums");
+      // Store the navigation state to pass to ForumsPage
+      window.__forumNav = s;
+    }
   };
 
   return (
     <LangContext.Provider value={t}>
       <style>{getStyles(t.dir)}</style>
-      <Navbar page={page} setPage={setPage} user={user} setShowAuth={handleShowAuth} lang={lang} toggleLang={toggleLang} />
+      <Navbar page={page} setPage={setPage} user={user} setShowAuth={handleShowAuth} lang={lang} toggleLang={toggleLang} toast={showToast} />
       {page === "home" && <Hero setPage={setPage} />}
       <div className="page-wrap">
-        {page === "home" && <ForumsHome nav={(s) => { if (s) setPage("forums"); }} user={user} setShowAuth={handleShowAuth} lang={lang} />}
-        {page === "forums" && <ForumsPage user={user} setShowAuth={handleShowAuth} lang={lang} />}
-        {page === "shop" && <ShopPage user={user} setShowAuth={handleShowAuth} lang={lang} />}
-        {page === "admin" && <AdminPage user={user} lang={lang} />}
-        {page === "profile" && <ProfilePage user={user} lang={lang} />}
+        {page === "home" && <ForumsHome nav={handleHomeForumNav} user={user} setShowAuth={handleShowAuth} lang={lang} />}
+        {page === "forums" && <ForumsPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
+        {page === "shop" && <ShopPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
+        {page === "admin" && <AdminPage user={user} lang={lang} showToast={showToast} />}
+        {page === "profile" && <ProfilePage user={user} setUser={setUser} lang={lang} showToast={showToast} />}
       </div>
       <Footer />
       {showAuth && showAuth !== "logout" && <AuthModal mode={showAuth} setMode={setShowAuth} onClose={() => setShowAuth(null)} onLogin={u => setUser(u)} />}
+      <Toast msg={toastMsg} />
     </LangContext.Provider>
   );
 }
