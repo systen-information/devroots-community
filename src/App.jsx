@@ -5,6 +5,36 @@ import { useState, useEffect, createContext, useContext } from "react";
 // ============================================================
 const API_URL = "https://devroots-backend.onrender.com";
 
+// ============================================================
+// FIREBASE CONFIG — Replace these with your Firebase project values
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC9HZg332YKLorHHoanIrweUgUu3NkU8bs",
+  authDomain: "devroots-108db.firebaseapp.com",
+  projectId: "devroots-108db",
+  storageBucket: "devroots-108db.firebasestorage.app",
+  messagingSenderId: "71450953253",
+  appId: "1:71450953253:web:87de206ca4dd6f294721cc"
+};
+
+// Firebase SDK (loaded from CDN)
+let firebaseApp = null;
+let firebaseAuth = null;
+let googleProvider = null;
+
+async function initFirebase() {
+  if (firebaseApp) return;
+  if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") return;
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getAuth, GoogleAuthProvider } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    firebaseApp = initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = getAuth(firebaseApp);
+    googleProvider = new GoogleAuthProvider();
+  } catch (e) { console.error("Firebase init failed:", e); }
+}
+initFirebase();
+
 async function api(endpoint, options = {}) {
   const token = localStorage.getItem("devroots_token");
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -265,6 +295,9 @@ const getStyles = (dir) => `
   .modal-foot button { background: none; border: none; color: var(--accent); cursor: pointer; font-family: var(--font-body); font-weight: 700; }
   .auth-error { color: var(--red); font-size: 0.8rem; text-align: center; margin-top: 0.75rem; padding: 8px; background: var(--red-dim); border-radius: var(--radius-xs); }
   .success-msg { color: var(--green); font-size: 0.8rem; text-align: center; margin-top: 0.75rem; padding: 8px; background: var(--green-dim); border-radius: var(--radius-xs); }
+  .google-btn { width: 100%; padding: 12px 20px; border-radius: var(--radius-xs); background: #fff; border: 1px solid #dadce0; color: #3c4043; font-family: 'Roboto', var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s; }
+  .google-btn:hover { background: #f7f8f8; border-color: #c6c6c6; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
   .shop-card { cursor: pointer; overflow: hidden; }
@@ -512,6 +545,38 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const isLogin = mode === "login";
+  const firebaseReady = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+
+  const handleGoogleSignIn = async () => {
+    setError(""); setLoading(true);
+    try {
+      if (!firebaseAuth || !googleProvider) {
+        await initFirebase();
+        if (!firebaseAuth) { setError("Firebase not configured"); setLoading(false); return; }
+      }
+      const { signInWithPopup } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      
+      const data = await api("/api/auth/firebase", {
+        method: "POST",
+        body: JSON.stringify({
+          idToken,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          uid: user.uid
+        })
+      });
+      localStorage.setItem("devroots_token", data.token);
+      onLogin(data.user); onClose();
+    } catch (err) {
+      if (err.code === "auth/popup-closed-by-user") { setLoading(false); return; }
+      setError(err.message);
+    } finally { setLoading(false); }
+  };
+
   const handleSubmit = async () => {
     setError(""); setLoading(true);
     try {
@@ -523,11 +588,28 @@ function AuthModal({ mode, setMode, onClose, onLogin }) {
       onLogin(data.user); onClose();
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
+
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <h2>{isLogin ? t.welcomeBack : t.joinCommunity}</h2>
         <p className="modal-sub">{isLogin ? t.signInAccount : t.createAccount}</p>
+        
+        {/* Firebase Google Sign-In Button */}
+        {firebaseReady && (
+          <>
+            <button className="google-btn" onClick={handleGoogleSignIn} disabled={loading}>
+              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              <span>{isLogin ? "Sign in with Google" : "Sign up with Google"}</span>
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1rem 0" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }}></div>
+              <span style={{ color: "var(--text-muted)", fontSize: "0.78rem", fontWeight: 600 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }}></div>
+            </div>
+          </>
+        )}
+
         {!isLogin && <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" placeholder={t.chooseUsername} value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>}
         <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
         <div className="fg"><label className="fg-label">{t.password}</label><input className="fg-input" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm({...form, password: e.target.value})} onKeyDown={e => e.key === "Enter" && isLogin && handleSubmit()} /></div>
