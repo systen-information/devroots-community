@@ -333,6 +333,7 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang }) {
           <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>
         ))}
         {user && <button className={`nav-link ${page === "profile" ? "active" : ""}`} onClick={() => setPage("profile")}>{t.profile}</button>}
+        {user && user.role === "admin" && <button className={`nav-link ${page === "admin" ? "active" : ""}`} onClick={() => setPage("admin")} style={{ color: page === "admin" ? "var(--amber)" : undefined }}>🛡️ Admin</button>}
       </div>
       <div className="nav-actions">
         <button className="lang-toggle" onClick={toggleLang}>{lang === "en" ? "العربية" : "English"}</button>
@@ -708,6 +709,152 @@ function ShopPage({ user, setShowAuth, lang }) {
 }
 
 // ============================================================
+// ADMIN DASHBOARD — Manage users, products, forums
+// ============================================================
+function AdminPage({ user, lang }) {
+  const t = useLang();
+  const [tab, setTab] = useState("stats");
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState("");
+
+  useEffect(() => {
+    if (tab === "stats") loadStats();
+    if (tab === "users") loadUsers();
+    if (tab === "logs") loadLogs();
+  }, [tab]);
+
+  const loadStats = async () => { setLoading(true); try { setStats(await api("/api/admin/stats")); } catch {} setLoading(false); };
+  const loadUsers = async () => { setLoading(true); try { setUsers(await api("/api/admin/users")); } catch {} setLoading(false); };
+  const loadLogs = async () => { setLoading(true); try { setLogs(await api("/api/admin/logs")); } catch {} setLoading(false); };
+
+  const handleBan = async (userId, ban) => {
+    const reason = ban ? prompt("Ban reason:") : null;
+    if (ban && !reason) return;
+    try { await api(`/api/admin/users/${userId}/ban`, { method: "PUT", body: JSON.stringify({ ban, reason }) }); loadUsers(); } catch (e) { alert(e.message); }
+  };
+
+  const handleRole = async (userId, role) => {
+    try { await api(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); loadUsers(); } catch (e) { alert(e.message); }
+  };
+
+  const handleSeed = async () => {
+    setSeeding(true); setSeedMsg("");
+    try {
+      const data = await api("/api/admin/seed", { method: "POST" });
+      setSeedMsg(data.skipped ? "Already seeded!" : `✅ Created ${data.users} users, ${data.threads} threads, ${data.products} products!`);
+      loadStats();
+    } catch (e) { setSeedMsg("❌ " + e.message); }
+    setSeeding(false);
+  };
+
+  if (!user || user.role !== "admin") {
+    return <div className="empty"><div className="empty-icon">🔒</div><p>Admin access required</p></div>;
+  }
+
+  return (
+    <div className="fade">
+      <div className="section-head">
+        <div><h2 className="section-title">🛡️ Admin Dashboard</h2><p className="section-sub">Manage your DevRoots community</p></div>
+        <button className="btn btn-accent" onClick={handleSeed} disabled={seeding}>{seeding ? "Seeding..." : "🌱 Seed Sample Data"}</button>
+      </div>
+      {seedMsg && <div style={{ padding: "12px 16px", background: seedMsg.startsWith("✅") ? "var(--green-dim)" : seedMsg.startsWith("Already") ? "var(--amber-dim)" : "var(--red-dim)", borderRadius: "var(--radius-sm)", marginBottom: "1rem", fontSize: "0.88rem" }}>{seedMsg}</div>}
+
+      <div className="tabs">
+        {[["stats", "📊 Stats"], ["users", "👥 Users"], ["logs", "📋 Logs"]].map(([key, label]) => (
+          <button key={key} className={`tab ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>{label}</button>
+        ))}
+      </div>
+
+      {loading ? <Loading /> : (
+        <>
+          {tab === "stats" && stats && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+              {[
+                ["👥", "Users", stats.users, "var(--accent)"],
+                ["💬", "Threads", stats.threads, "var(--cyan)"],
+                ["📝", "Posts", stats.posts, "var(--amber)"],
+                ["📦", "Products", stats.products, "var(--green)"],
+                ["⏳", "Pending Approval", stats.pendingApprovals, "var(--copper)"],
+                ["💰", "Revenue", "$" + stats.totalRevenue.toFixed(2), "var(--amber)"],
+              ].map(([icon, label, value, color]) => (
+                <div key={label} className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                  <div style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>{icon}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", color }}>{value}</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginTop: "4px" }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "users" && (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
+                    {["User", "Role", "Reputation", "Status", "Joined", "Actions"].map(h => (
+                      <th key={h} style={{ padding: "12px 16px", textAlign: "start", color: "var(--text-muted)", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: "1.3rem" }}>{u.avatar}</span>
+                          <div><div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{u.username}</div><div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{u.email}</div></div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <select className="select-field" value={u.role} onChange={e => handleRole(u.id, e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)" }}>
+                          {["member", "developer", "moderator", "admin"].map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "var(--accent)", fontWeight: 700 }}>{u.reputation}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {u.is_banned ? <span style={{ color: "var(--red)", fontSize: "0.82rem", fontWeight: 700 }}>🚫 Banned</span> : <span style={{ color: "var(--green)", fontSize: "0.82rem" }}>✅ Active</span>}
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "var(--text-muted)", fontSize: "0.82rem" }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {u.role !== "admin" && (
+                          <button className="btn btn-sm" style={{ background: u.is_banned ? "var(--green-dim)" : "var(--red-dim)", color: u.is_banned ? "var(--green)" : "var(--red)", border: "none", fontSize: "0.75rem" }} onClick={() => handleBan(u.id, !u.is_banned)}>
+                            {u.is_banned ? "Unban" : "Ban"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {tab === "logs" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {logs.length > 0 ? logs.map(log => (
+                <div key={log.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.25rem" }}>
+                  <div>
+                    <span style={{ color: "var(--accent)", fontWeight: 700 }}>{log.admin_name}</span>
+                    <span style={{ color: "var(--text-muted)", margin: "0 8px" }}>→</span>
+                    <span style={{ fontWeight: 600 }}>{log.action.replace(/_/g, " ")}</span>
+                    {log.details && <span style={{ color: "var(--text-muted)", marginLeft: 8, fontSize: "0.85rem" }}>({log.details})</span>}
+                  </div>
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.78rem", flexShrink: 0 }}>{new Date(log.created_at).toLocaleString()}</span>
+                </div>
+              )) : <div className="empty"><div className="empty-icon">📋</div><p>No admin activity yet</p></div>}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // PROFILE — Real user data
 // ============================================================
 function ProfilePage({ user, lang }) {
@@ -780,6 +927,7 @@ export default function DevRoots() {
         {page === "home" && <ForumsHome nav={(s) => { if (s) setPage("forums"); }} user={user} setShowAuth={handleShowAuth} lang={lang} />}
         {page === "forums" && <ForumsPage user={user} setShowAuth={handleShowAuth} lang={lang} />}
         {page === "shop" && <ShopPage user={user} setShowAuth={handleShowAuth} lang={lang} />}
+        {page === "admin" && <AdminPage user={user} lang={lang} />}
         {page === "profile" && <ProfilePage user={user} lang={lang} />}
       </div>
       <Footer />
