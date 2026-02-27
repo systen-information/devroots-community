@@ -35,6 +35,40 @@ async function initFirebase() {
 }
 initFirebase();
 
+// ============================================================
+// ROLE DEFINITIONS
+// ============================================================
+const ROLES = {
+  "admin":              { label: "Admin",              labelAr: "مدير",              color: "#FFBF00", rank: 0 },
+  "arch-developer":     { label: "Arch-Developer",     labelAr: "مهندس رئيسي",      color: "#FFBF00", rank: 1 },
+  "core-architect":     { label: "Core Architect",     labelAr: "مهندس النواة",      color: "#50C878", rank: 2 },
+  "systems-engineer":   { label: "Systems Engineer",   labelAr: "مهندس أنظمة",       color: "#4682B4", rank: 3 },
+  "script-master":      { label: "Script Master",      labelAr: "خبير البرمجة",      color: "#98FF98", rank: 4 },
+  "creative-director":  { label: "Creative Director",  labelAr: "المدير الإبداعي",   color: "#B76E79", rank: 5 },
+  "ui-ux-specialist":   { label: "UI/UX Specialist",   labelAr: "متخصص واجهات",      color: "#8F00FF", rank: 6 },
+  "visual-artist":      { label: "Visual Artist",      labelAr: "فنان بصري",         color: "#87CEEB", rank: 7 },
+  "3d-modeler":         { label: "3D Modeler",         labelAr: "مصمم ثلاثي الأبعاد", color: "#CD7F32", rank: 8 },
+  "content-creator":    { label: "Content Creator",    labelAr: "منشئ محتوى",        color: "#FF7F50", rank: 9 },
+  "tech-moderator":     { label: "Tech Moderator",     labelAr: "مشرف تقني",         color: "#C0C0C0", rank: 10 },
+  "junior-dev":         { label: "Junior Dev",         labelAr: "مطور مبتدئ",        color: "#8A9A5B", rank: 11 },
+  "member":             { label: "Member",             labelAr: "عضو",               color: "#6b7d5e", rank: 12 },
+};
+
+const CATEGORY_GROUPS = [
+  { title: "Administration & News", titleAr: "الإدارة والأخبار", slugs: ["announcements", "rules-welcome"] },
+  { title: "Rappelz Development Hub", titleAr: "مركز تطوير رابلز", slugs: ["core-dev", "rendering", "scripting", "ui-ux"] },
+  { title: "Creative & 3D Design", titleAr: "التصميم الإبداعي وثلاثي الأبعاد", slugs: ["3d-modeling", "2d-design"] },
+  { title: "Tutorials & Support", titleAr: "الدروس والدعم", slugs: ["knowledge-base", "troubleshooting"] },
+];
+
+function getRoleLabel(role, lang) {
+  const r = ROLES[role] || ROLES["member"];
+  return lang === "ar" ? r.labelAr : r.label;
+}
+function getRoleColor(role) {
+  return (ROLES[role] || ROLES["member"]).color;
+}
+
 async function api(endpoint, options = {}) {
   const token = localStorage.getItem("devroots_token");
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -264,11 +298,22 @@ const getStyles = (dir) => `
   .post-avatar-wrap { display: flex; align-items: center; gap: 10px; }
   .post-avatar { width: 40px; height: 40px; background: var(--accent-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
   .post-uname { font-weight: 700; font-size: 0.9rem; }
-  .role-badge { font-size: 0.66rem; font-weight: 700; padding: 2px 9px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .role-admin { background: var(--amber-dim); color: var(--amber); }
-  .role-moderator { background: var(--cyan-dim); color: var(--cyan); }
-  .role-developer { background: var(--accent-dim); color: var(--accent); }
+  .role-badge { font-size: 0.66rem; font-weight: 700; padding: 2px 9px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .role-admin { background: rgba(255,191,0,0.15); color: #FFBF00; }
+  .role-arch-developer { background: rgba(255,191,0,0.15); color: #FFBF00; }
+  .role-core-architect { background: rgba(80,200,120,0.15); color: #50C878; }
+  .role-systems-engineer { background: rgba(70,130,180,0.15); color: #4682B4; }
+  .role-script-master { background: rgba(152,255,152,0.15); color: #98FF98; }
+  .role-junior-dev { background: rgba(138,154,91,0.15); color: #8A9A5B; }
+  .role-creative-director { background: rgba(183,110,121,0.15); color: #B76E79; }
+  .role-ui-ux-specialist { background: rgba(143,0,255,0.15); color: #8F00FF; }
+  .role-visual-artist { background: rgba(135,206,235,0.15); color: #87CEEB; }
+  .role-3d-modeler { background: rgba(205,127,50,0.15); color: #CD7F32; }
+  .role-content-creator { background: rgba(255,127,80,0.15); color: #FF7F50; }
+  .role-tech-moderator { background: rgba(192,192,192,0.15); color: #C0C0C0; }
   .role-member { background: var(--bg-surface-3); color: var(--text-muted); }
+  .cat-group-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--amber); margin: 2rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .cat-group-title:first-child { margin-top: 0; }
   .post-date { color: var(--text-muted); font-size: 0.78rem; }
   .post-body { padding: 1.25rem; line-height: 1.85; font-size: 0.92rem; color: var(--text-secondary); white-space: pre-wrap; }
   .post-foot { display: flex; gap: 1rem; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); }
@@ -425,7 +470,7 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
       <div className="nav-links">
         {["home", "forums", "shop"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>)}
         {user && <button className={`nav-link ${page === "profile" ? "active" : ""}`} onClick={() => setPage("profile")}>{t.profile}</button>}
-        {user && user.role === "admin" && <button className={`nav-link ${page === "admin" ? "active" : ""}`} onClick={() => setPage("admin")} style={{ color: page === "admin" ? "var(--amber)" : undefined }}>🛡️ Admin</button>}
+        {user && ["admin", "tech-moderator", "arch-developer"].includes(user.role) && <button className={`nav-link ${page === "admin" ? "active" : ""}`} onClick={() => setPage("admin")} style={{ color: page === "admin" ? "var(--amber)" : undefined }}>🛡️ Admin</button>}
       </div>
       <div className="nav-actions">
         <button className="lang-toggle" onClick={toggleLang}>{lang === "en" ? "العربية" : "English"}</button>
@@ -678,8 +723,30 @@ function ForumsHome({ nav, user, setShowAuth, lang }) {
           )}
         </div>
       ) : (
-        <div className="cat-grid stagger">
-          {categories.map(c => (
+        <div className="stagger">
+          {CATEGORY_GROUPS.map(g => {
+            const groupCats = g.slugs.map(s => categories.find(c => c.slug === s)).filter(Boolean);
+            if (groupCats.length === 0) return null;
+            return (
+              <div key={g.title}>
+                <div className="cat-group-title">{lang === "ar" ? g.titleAr : g.title}</div>
+                <div className="cat-grid">
+                  {groupCats.map(c => (
+                    <div key={c.id} className="card cat-card" onClick={() => nav({ v: "cat", slug: c.slug, name: lang === "ar" ? c.name_ar : c.name })}>
+                      <div className="cat-icon">{c.icon}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="cat-name">{lang === "ar" ? c.name_ar || c.name : c.name}</div>
+                        <div className="cat-desc">{lang === "ar" ? c.description_ar || c.description : c.description}</div>
+                        <div className="cat-stats"><span>📝 {c.thread_count} {t.threads}</span><span>💬 {c.post_count} {t.posts}</span></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {/* Show uncategorized */}
+          {categories.filter(c => !CATEGORY_GROUPS.some(g => g.slugs.includes(c.slug))).map(c => (
             <div key={c.id} className="card cat-card" onClick={() => nav({ v: "cat", slug: c.slug, name: lang === "ar" ? c.name_ar : c.name })}>
               <div className="cat-icon">{c.icon}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -772,7 +839,7 @@ function ThreadView({ threadId, nav, user, setShowAuth, lang, showToast }) {
         {posts.map((p, i) => (
           <div key={p.id} className={`post-card ${i === 0 ? "op-post" : ""}`}>
             <div className="post-head">
-              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname">{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{p.author_role}</span></div></div>
+              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname" style={{ color: getRoleColor(p.author_role) }}>{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{getRoleLabel(p.author_role, lang)}</span></div></div>
               <div className="post-date">{new Date(p.created_at).toLocaleDateString()}</div>
             </div>
             <div className="post-body">{lang === "ar" ? p.content_ar || p.content : p.content}</div>
@@ -1014,15 +1081,12 @@ function AdminPage({ user, lang, showToast }) {
     if (tab === "users") api("/api/admin/users").then(setUsers).catch(() => {}).finally(() => setLoading(false));
     if (tab === "logs") api("/api/admin/logs").then(setLogs).catch(() => {}).finally(() => setLoading(false));
     if (tab === "products") {
-      // Load all products including pending
       api("/api/admin/stats").then(s => {
         setStats(s);
         return api("/api/admin/users");
-      }).then(() => {
-        // Get pending products from stats
-        setLoading(false);
-      }).catch(() => setLoading(false));
+      }).then(() => setLoading(false)).catch(() => setLoading(false));
     }
+    if (tab === "roles") setLoading(false);
   }, [tab]);
 
   const handleBan = async (userId, ban) => {
@@ -1031,7 +1095,7 @@ function AdminPage({ user, lang, showToast }) {
     try { await api(`/api/admin/users/${userId}/ban`, { method: "PUT", body: JSON.stringify({ ban, reason }) }); showToast(ban ? "User banned" : "User unbanned"); api("/api/admin/users").then(setUsers); } catch (e) { alert(e.message); }
   };
   const handleRole = async (userId, role) => {
-    try { await api(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); showToast("Role updated to " + role); } catch (e) { alert(e.message); }
+    try { await api(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); showToast("Role updated to " + getRoleLabel(role, lang)); api("/api/admin/users").then(setUsers); } catch (e) { alert(e.message); }
   };
   const handleApprove = async (productId, approved) => {
     try { await api(`/api/admin/products/${productId}/approve`, { method: "PUT", body: JSON.stringify({ approved }) }); showToast(approved ? "Product approved ✅" : "Product rejected ❌"); } catch (e) { alert(e.message); }
@@ -1044,18 +1108,25 @@ function AdminPage({ user, lang, showToast }) {
       if (tab === "stats") api("/api/admin/stats").then(setStats);
     } catch (e) { setSeedMsg("❌ " + e.message); } setSeeding(false);
   };
+  const handleResetCats = async () => {
+    if (!confirm("This will DELETE all existing categories, threads, and posts, then create the new 10 categories. Are you sure?")) return;
+    try { const data = await api("/api/admin/reset-categories", { method: "POST" }); showToast("✅ " + data.message); } catch (e) { alert(e.message); }
+  };
 
-  if (!user || user.role !== "admin") return <div className="empty"><div className="empty-icon">🔒</div><p>Admin access required</p></div>;
+  if (!user || !["admin", "tech-moderator", "arch-developer"].includes(user.role)) return <div className="empty"><div className="empty-icon">🔒</div><p>Admin access required</p></div>;
 
   return (
     <div className="fade">
       <div className="section-head">
         <div><h2 className="section-title">🛡️ Admin Dashboard</h2><p className="section-sub">Manage your DevRoots community</p></div>
-        <button className="btn btn-accent" onClick={handleSeed} disabled={seeding}>{seeding ? "Seeding..." : "🌱 Seed Sample Data"}</button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn btn-surface" onClick={handleResetCats}>🔄 Reset Categories</button>
+          <button className="btn btn-accent" onClick={handleSeed} disabled={seeding}>{seeding ? "Seeding..." : "🌱 Seed Data"}</button>
+        </div>
       </div>
       {seedMsg && <div style={{ padding: "12px 16px", background: seedMsg.startsWith("✅") ? "var(--green-dim)" : seedMsg.startsWith("Already") ? "var(--amber-dim)" : "var(--red-dim)", borderRadius: "var(--radius-sm)", marginBottom: "1rem", fontSize: "0.88rem" }}>{seedMsg}</div>}
       <div className="tabs">
-        {[["stats", "📊 Stats"], ["users", "👥 Users"], ["products", "📦 Products"], ["logs", "📋 Logs"]].map(([key, label]) => (
+        {[["stats", "📊 Stats"], ["users", "👥 Users"], ["roles", "🎖️ Roles"], ["products", "📦 Products"], ["logs", "📋 Logs"]].map(([key, label]) => (
           <button key={key} className={`tab ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>{label}</button>
         ))}
       </div>
@@ -1083,8 +1154,12 @@ function AdminPage({ user, lang, showToast }) {
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "12px 16px" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: "1.3rem" }}>{u.avatar}</span><div><div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{u.username}</div><div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{u.email}</div></div></div></td>
-                    <td style={{ padding: "12px 16px" }}><select className="select-field" value={u.role} onChange={e => handleRole(u.id, e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)" }}>{["member", "developer", "moderator", "admin"].map(r => <option key={r} value={r}>{r}</option>)}</select></td>
+                    <td style={{ padding: "12px 16px" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: "1.3rem" }}>{u.avatar}</span><div><div style={{ fontWeight: 700, fontSize: "0.9rem", color: getRoleColor(u.role) }}>{u.username}</div><div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{u.email}</div></div></div></td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <select className="select-field" value={u.role} onChange={e => handleRole(u.id, e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)", color: getRoleColor(u.role), fontWeight: 700, border: `1px solid ${getRoleColor(u.role)}30` }}>
+                        {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key} style={{ color: r.color }}>{r.label}</option>)}
+                      </select>
+                    </td>
                     <td style={{ padding: "12px 16px", color: "var(--accent)", fontWeight: 700 }}>{u.reputation}</td>
                     <td style={{ padding: "12px 16px" }}>{u.is_banned ? <span style={{ color: "var(--red)", fontSize: "0.82rem", fontWeight: 700 }}>🚫 Banned</span> : <span style={{ color: "var(--green)", fontSize: "0.82rem" }}>✅ Active</span>}</td>
                     <td style={{ padding: "12px 16px", color: "var(--text-muted)", fontSize: "0.82rem" }}>{new Date(u.created_at).toLocaleDateString()}</td>
@@ -1093,6 +1168,25 @@ function AdminPage({ user, lang, showToast }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {tab === "roles" && (
+          <div>
+            <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.88rem" }}>All DevRoots roles ranked from highest to lowest authority. Assign roles from the Users tab.</p>
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {Object.entries(ROLES).map(([key, r]) => (
+                <div key={key} className="card" style={{ padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem", borderLeft: `4px solid ${r.color}` }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${r.color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.85rem", color: r.color, flexShrink: 0 }}>#{r.rank}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: r.color, fontSize: "1rem" }}>{r.label}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{r.labelAr}</div>
+                  </div>
+                  <span className={`role-badge role-${key}`}>{r.label}</span>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: r.color, flexShrink: 0 }}></div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1141,7 +1235,7 @@ function ProfilePage({ user, setUser, lang, showToast }) {
         <div className="prof-avatar">{user.avatar || "👤"}</div>
         <div>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem" }}>{user.username}</h2>
-          <span className={`role-badge role-${user.role}`}>{user.role}</span>
+          <span className={`role-badge role-${user.role}`}>{getRoleLabel(user.role, lang)}</span>
           <div className="prof-stats"><div style={{ textAlign: "center" }}><div className="prof-stat-v">{user.reputation || 0}</div><div className="prof-stat-l">{t.reputation}</div></div></div>
         </div>
       </div>
