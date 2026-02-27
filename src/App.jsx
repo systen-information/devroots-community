@@ -161,8 +161,7 @@ const getStyles = (dir) => `
 
   .navbar { position: sticky; top: 0; z-index: 100; background: rgba(12,15,10,0.9); backdrop-filter: blur(24px) saturate(1.2); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 66px; display: flex; align-items: center; justify-content: space-between; }
   .nav-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-  .nav-logo { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
-  .nav-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .nav-logo { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .nav-brand-text { font-family: var(--font-display); font-size: 1.35rem; }
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-link { padding: 8px 18px; border-radius: var(--radius-xs); color: var(--text-secondary); font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; border: none; background: none; font-family: var(--font-body); position: relative; }
@@ -367,7 +366,28 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
   return (
     <nav className="navbar">
       <div className="nav-brand" onClick={() => setPage("home")}>
-        <div className="nav-logo"><img src="/devroots-logo.png" alt="DevRoots" /></div><span className="nav-brand-text">{t.brand}</span>
+        <div className="nav-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="38" height="38">
+            <defs>
+              <linearGradient id="n1" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0%" stopColor="#9ccc65"/><stop offset="40%" stopColor="#7cb342"/><stop offset="100%" stopColor="#558b2f"/></linearGradient>
+              <linearGradient id="n2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7cb342"/><stop offset="100%" stopColor="#4a6b2a"/></linearGradient>
+              <linearGradient id="n3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f9a825"/><stop offset="100%" stopColor="#c88a10"/></linearGradient>
+            </defs>
+            <g transform="translate(100,90)">
+              <path d="M0,-75 Q-44,-40 -44,-16 Q-44,4 -28,12 Q-14,18 0,18 Q14,18 28,12 Q44,4 44,-16 Q44,-40 0,-75 Z" fill="url(#n1)"/>
+              <path d="M0,-70 L0,16" stroke="#558b2f" strokeWidth="1.5" fill="none" opacity="0.3"/>
+              <rect x="-4" y="16" width="8" height="20" rx="2" fill="url(#n2)"/>
+              <line x1="0" y1="36" x2="0" y2="58" stroke="url(#n3)" strokeWidth="2.5"/>
+              <polyline points="0,44 -20,44 -20,56 -38,56" stroke="url(#n3)" strokeWidth="2" fill="none"/>
+              <polyline points="0,44 20,44 20,56 38,56" stroke="url(#n3)" strokeWidth="2" fill="none"/>
+              <circle cx="-20" cy="44" r="3" fill="#0c0f0a" stroke="#f9a825" strokeWidth="1.5"/><circle cx="-20" cy="44" r="1.2" fill="#f9a825"/>
+              <circle cx="20" cy="44" r="3" fill="#0c0f0a" stroke="#f9a825" strokeWidth="1.5"/><circle cx="20" cy="44" r="1.2" fill="#f9a825"/>
+              <circle cx="0" cy="58" r="3" fill="#0c0f0a" stroke="#f9a825" strokeWidth="1.5"/><circle cx="0" cy="58" r="1.2" fill="#f9a825"/>
+              <circle cx="-38" cy="56" r="2" fill="#f9a825" opacity="0.85"/>
+              <circle cx="38" cy="56" r="2" fill="#f9a825" opacity="0.85"/>
+            </g>
+          </svg>
+        </div><span className="nav-brand-text">{t.brand}</span>
       </div>
       <div className="nav-links">
         {["home", "forums", "shop"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>)}
