@@ -435,6 +435,9 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
 // ============================================================
 function Hero({ setPage }) {
   const t = useLang();
+  const [stats, setStats] = useState({ developers: 0, discussions: 0, projectsShared: 0, posts: 0 });
+  useEffect(() => { api("/api/stats/public").then(setStats).catch(() => {}); }, []);
+  const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K+" : n.toLocaleString();
   return (
     <section className="hero">
       <div className="hero-pattern" />
@@ -491,7 +494,7 @@ function Hero({ setPage }) {
           <button className="btn btn-surface" onClick={() => setPage("shop")}>{t.developerShop}</button>
         </div>
         <div className="hero-stats">
-          {[["1,247", t.developers], ["3,892", t.discussions], ["856", t.projectsShared], ["12K+", t.posts]].map(([v, l]) => (
+          {[[fmt(stats.developers), t.developers], [fmt(stats.discussions), t.discussions], [fmt(stats.projectsShared), t.projectsShared], [fmt(stats.posts), t.posts]].map(([v, l]) => (
             <div key={l} style={{ textAlign: "center" }}><div className="hero-stat-val">{v}</div><div className="hero-stat-label">{l}</div></div>
           ))}
         </div>
