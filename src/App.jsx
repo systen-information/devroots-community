@@ -419,7 +419,7 @@ function Hero({ setPage }) {
     <section className="hero">
       <div className="hero-pattern" />
       <div className="hero-content fade">
-        <div className="hero-badge"><img src="/devroots-logo.png" alt="" style={{ width: 20, height: 20 }} /> {t.tagline}</div>
+        <div style={{ marginBottom: "1.5rem" }}><img src="/devroots-logo.png" alt="DevRoots" style={{ height: 120, objectFit: "contain" }} /></div>
         <h1>{t.heroTitle.split(" ").slice(0, -1).join(" ")} <span className="highlight">{t.heroTitle.split(" ").slice(-1)}</span></h1>
         <p>{t.heroDesc}</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
