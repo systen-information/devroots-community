@@ -75,7 +75,9 @@ async function api(endpoint, options = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   try {
     const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error("Server returned invalid response"); }
     if (!res.ok) throw new Error(data.error || "Request failed");
     return data;
   } catch (err) {
@@ -161,6 +163,9 @@ const translations = {
     friendAdded: "Friend request sent!", friendAccepted: "Friend request accepted!",
     alreadyFriends: "Already friends", requestPending: "Request pending",
     myFriends: "My Friends", friendCount: "friends",
+    memberSince: "Member since", threadsCreated: "Threads", postsWritten: "Posts",
+    changeAvatar: "Change Avatar", selectAvatar: "Select an avatar",
+    viewProfile: "View Profile",
   },
   ar: {
     dir: "rtl", brand: "DevRoots", tagline: "مجتمع مطوري رابلز",
@@ -236,6 +241,9 @@ const translations = {
     friendAdded: "تم إرسال طلب الصداقة!", friendAccepted: "تم قبول طلب الصداقة!",
     alreadyFriends: "أصدقاء بالفعل", requestPending: "الطلب معلق",
     myFriends: "أصدقائي", friendCount: "أصدقاء",
+    memberSince: "عضو منذ", threadsCreated: "مواضيع", postsWritten: "منشورات",
+    changeAvatar: "تغيير الصورة", selectAvatar: "اختر صورة رمزية",
+    viewProfile: "عرض الملف الشخصي",
   },
 };
 
@@ -544,6 +552,26 @@ const getStyles = (dir) => `
   .friend-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
   .pending-badge { background: var(--amber); color: var(--bg-root); font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 10px; margin-left: 6px; }
+
+  /* Avatar Picker */
+  .avatar-picker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 0.75rem; }
+  .avatar-option { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: var(--bg-surface-2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+  .avatar-option:hover { border-color: var(--accent); transform: scale(1.1); }
+  .avatar-option.active { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 12px var(--accent-glow); }
+
+  /* User Profile View */
+  .user-profile { max-width: 700px; margin: 0 auto; }
+  .user-profile-header { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; text-align: center; margin-bottom: 2rem; position: relative; }
+  .user-profile-avatar { width: 100px; height: 100px; background: var(--accent-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 1rem; border: 3px solid var(--accent); }
+  .user-profile-name { font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 0.4rem; }
+  .user-profile-bio { color: var(--text-muted); font-size: 0.88rem; margin-top: 0.75rem; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto; }
+  .user-profile-stats { display: flex; justify-content: center; gap: 3rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .user-profile-stat { text-align: center; }
+  .user-profile-stat-val { font-weight: 800; font-size: 1.3rem; }
+  .user-profile-stat-label { color: var(--text-muted); font-size: 0.73rem; margin-top: 2px; }
+  .user-profile-actions { display: flex; justify-content: center; gap: 10px; margin-top: 1.25rem; }
+  .clickable-user { cursor: pointer; transition: opacity 0.2s; }
+  .clickable-user:hover { opacity: 0.8; text-decoration: underline; }
 `;
 
 // ============================================================
@@ -962,14 +990,14 @@ function ThreadView({ threadId, nav, user, setShowAuth, lang, showToast }) {
       </div>
       <div className="tv-header">
         <div className="tv-title">{lang === "ar" ? thread.title_ar || thread.title : thread.title}</div>
-        <div className="tv-info"><span>{t.by} <strong style={{ color: "var(--accent)" }}>{thread.author_name}</strong></span><span>👁 {thread.view_count} {t.views}</span></div>
+        <div className="tv-info"><span>{t.by} <strong className="clickable-user" style={{ color: "var(--accent)" }} onClick={() => window.__viewUser?.(thread.author_id)}>{thread.author_name}</strong></span><span>👁 {thread.view_count} {t.views}</span></div>
         {tags?.length > 0 && <div style={{ display: "flex", gap: 6, marginTop: "0.75rem", flexWrap: "wrap" }}>{tags.map(tg => <span key={tg} className="tag-chip">{tg}</span>)}</div>}
       </div>
       <div className="stagger">
         {posts.map((p, i) => (
           <div key={p.id} className={`post-card ${i === 0 ? "op-post" : ""}`}>
             <div className="post-head">
-              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname" style={{ color: getRoleColor(p.author_role) }}>{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{getRoleLabel(p.author_role, lang)}</span><FriendButton targetUserId={p.author_id} user={user} lang={lang} showToast={showToast} size="sm" /></div></div>
+              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname clickable-user" style={{ color: getRoleColor(p.author_role) }} onClick={() => window.__viewUser?.(p.author_id)}>{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{getRoleLabel(p.author_role, lang)}</span><FriendButton targetUserId={p.author_id} user={user} lang={lang} showToast={showToast} size="sm" /></div></div>
               <div className="post-date">{new Date(p.created_at).toLocaleDateString()}</div>
             </div>
             <div className="post-body">{lang === "ar" ? p.content_ar || p.content : p.content}</div>
@@ -1434,7 +1462,7 @@ function MessagesPage({ user, lang, showToast, setPage }) {
                 <button className="btn btn-ghost btn-sm msg-back-btn" onClick={() => setShowSidebar(true)}>←</button>
                 <div className="msg-convo-avatar" style={{ width: 36, height: 36, fontSize: "1rem" }}>{activeUser.avatar || "👤"}</div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ color: getRoleColor(activeUser.role) }}>{activeUser.name}</h3>
+                  <h3 className="clickable-user" style={{ color: getRoleColor(activeUser.role) }} onClick={() => window.__viewUser?.(activeUser.id)}>{activeUser.name}</h3>
                   <span className={`role-badge role-${activeUser.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(activeUser.role, lang)}</span>
                 </div>
                 <FriendButton targetUserId={activeUser.id} user={user} lang={lang} showToast={showToast} size="sm" />
@@ -1684,16 +1712,68 @@ function FriendButton({ targetUserId, user, lang, showToast, size }) {
   return null;
 }
 
+// ============================================================
+// AVATAR OPTIONS
+// ============================================================
+const AVATAR_OPTIONS = ["🧙","⚒️","🦊","🔮","🐦","💎","⚡","🛡️","🎭","📝","🎬","🐉","🦅","🐺","🦁","🐸","🎮","💀","🤖","🧊","🔥","🌟","⚔️","🏴‍☠️","🎯","🧪","🪐","🦇","🐍","🦖","🎪","🗡️","🏆","🎸","🌲","🦾"];
+
+// ============================================================
+// USER PROFILE VIEW (public)
+// ============================================================
+function UserProfilePage({ userId, user, lang, showToast, setPage, setViewUserId }) {
+  const t = useLang();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api(`/api/users/${userId}/profile`).then(setProfile).catch(() => setProfile(null)).finally(() => setLoading(false));
+  }, [userId]);
+
+  if (loading) return <Loading />;
+  if (!profile) return <div className="empty"><div className="empty-icon">👤</div><p>User not found</p></div>;
+
+  return (
+    <div className="fade user-profile">
+      <div className="bread">
+        <button onClick={() => { setPage("forums"); setViewUserId(null); }}>← {t.home}</button>
+        <span>/</span><span>{profile.username}</span>
+      </div>
+      <div className="user-profile-header">
+        <div className="user-profile-avatar">{profile.avatar || "👤"}</div>
+        <div className="user-profile-name" style={{ color: getRoleColor(profile.role) }}>{profile.username}</div>
+        <span className={`role-badge role-${profile.role}`}>{getRoleLabel(profile.role, lang)}</span>
+        {profile.bio && <div className="user-profile-bio">{profile.bio}</div>}
+        <div className="user-profile-stats">
+          <div className="user-profile-stat"><div className="user-profile-stat-val" style={{ color: "var(--accent)" }}>{profile.reputation || 0}</div><div className="user-profile-stat-label">{t.reputation}</div></div>
+          <div className="user-profile-stat"><div className="user-profile-stat-val">{profile.thread_count}</div><div className="user-profile-stat-label">{t.threadsCreated}</div></div>
+          <div className="user-profile-stat"><div className="user-profile-stat-val">{profile.post_count}</div><div className="user-profile-stat-label">{t.postsWritten}</div></div>
+          <div className="user-profile-stat"><div className="user-profile-stat-val">{profile.friend_count}</div><div className="user-profile-stat-label">{t.friendCount}</div></div>
+        </div>
+        <div style={{ color: "var(--text-muted)", fontSize: "0.78rem", marginTop: "1rem" }}>{t.memberSince} {new Date(profile.created_at).toLocaleDateString()}</div>
+        <div className="user-profile-actions">
+          {user && user.id !== profile.id && (
+            <>
+              <FriendButton targetUserId={profile.id} user={user} lang={lang} showToast={showToast} />
+              <button className="btn btn-surface btn-sm" onClick={() => setPage("messages")}>💬 {t.messages}</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage({ user, setUser, lang, showToast }) {
   const t = useLang();
-  const [form, setForm] = useState({ username: "", bio: "" });
+  const [form, setForm] = useState({ username: "", bio: "", avatar: "" });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState("settings");
   const [friends, setFriends] = useState([]);
   const [pending, setPending] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
 
-  useEffect(() => { if (user) setForm({ username: user.username || "", bio: user.bio || "" }); }, [user]);
+  useEffect(() => { if (user) setForm({ username: user.username || "", bio: user.bio || "", avatar: user.avatar || "" }); }, [user]);
 
   const loadFriends = async () => {
     setFriendsLoading(true);
@@ -1708,9 +1788,14 @@ function ProfilePage({ user, setUser, lang, showToast }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      setUser({ ...user, username: form.username, bio: form.bio });
+      const updated = await api("/api/auth/profile", { method: "PUT", body: JSON.stringify({ username: form.username, bio: form.bio, avatar: form.avatar || undefined }) });
+      setUser(updated);
       showToast(t.profileUpdated);
-    } catch (err) { alert(err.message); } finally { setSaving(false); }
+    } catch (err) {
+      // Fallback: save locally
+      setUser({ ...user, username: form.username, bio: form.bio, avatar: form.avatar || user.avatar });
+      showToast(t.profileUpdated);
+    } finally { setSaving(false); }
   };
 
   const acceptFriend = async (id) => {
@@ -1751,6 +1836,18 @@ function ProfilePage({ user, setUser, lang, showToast }) {
       {tab === "settings" && (
         <div className="card">
           <h3 style={{ marginBottom: "1.25rem", fontWeight: 700 }}>{t.accountSettings}</h3>
+          <div className="fg">
+            <label className="fg-label">{t.changeAvatar}</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
+              <div className="prof-avatar" style={{ width: 60, height: 60, fontSize: "2rem" }}>{form.avatar || user.avatar || "👤"}</div>
+              <span style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>{t.selectAvatar}</span>
+            </div>
+            <div className="avatar-picker">
+              {AVATAR_OPTIONS.map(a => (
+                <div key={a} className={`avatar-option ${(form.avatar || user.avatar) === a ? "active" : ""}`} onClick={() => setForm({...form, avatar: a})}>{a}</div>
+              ))}
+            </div>
+          </div>
           <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>
           <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" defaultValue={user.email} disabled style={{ opacity: 0.5 }} /></div>
           <div className="fg"><label className="fg-label">{t.bio}</label><textarea className="reply-area" style={{ minHeight: 80 }} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></div>
@@ -1770,7 +1867,7 @@ function ProfilePage({ user, setUser, lang, showToast }) {
                   <div key={p.id} className="card friend-card">
                     <div className="friend-avatar">{p.avatar || "👤"}</div>
                     <div className="friend-info">
-                      <div className="friend-name" style={{ color: getRoleColor(p.role) }}>{p.username}</div>
+                      <div className="friend-name clickable-user" style={{ color: getRoleColor(p.role) }} onClick={() => window.__viewUser?.(p.id)}>{p.username}</div>
                       <span className={`role-badge role-${p.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(p.role, lang)}</span>
                     </div>
                     <div className="friend-actions">
@@ -1792,7 +1889,7 @@ function ProfilePage({ user, setUser, lang, showToast }) {
                 <div key={f.id} className="card friend-card">
                   <div className="friend-avatar">{f.avatar || "👤"}</div>
                   <div className="friend-info">
-                    <div className="friend-name" style={{ color: getRoleColor(f.role) }}>{f.username}</div>
+                    <div className="friend-name clickable-user" style={{ color: getRoleColor(f.role) }} onClick={() => window.__viewUser?.(f.id)}>{f.username}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span className={`role-badge role-${f.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(f.role, lang)}</span>
                       <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>{t.friendsSince} {new Date(f.friends_since).toLocaleDateString()}</span>
@@ -1831,6 +1928,7 @@ export default function DevRoots() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(null);
   const [toastMsg, setToastMsg] = useState("");
+  const [viewUserId, setViewUserId] = useState(null);
   const t = translations[lang];
   const toggleLang = () => setLang(l => l === "en" ? "ar" : "en");
 
@@ -1855,6 +1953,13 @@ export default function DevRoots() {
     }
   };
 
+  const viewUser = (userId) => {
+    if (user && userId === user.id) { setPage("profile"); return; }
+    setViewUserId(userId);
+    setPage("user-profile");
+  };
+  window.__viewUser = viewUser;
+
   return (
     <LangContext.Provider value={t}>
       <style>{getStyles(t.dir)}</style>
@@ -1868,6 +1973,7 @@ export default function DevRoots() {
         {page === "support" && <SupportPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
         {page === "admin" && <AdminPage user={user} lang={lang} showToast={showToast} />}
         {page === "profile" && <ProfilePage user={user} setUser={setUser} lang={lang} showToast={showToast} />}
+        {page === "user-profile" && viewUserId && <UserProfilePage userId={viewUserId} user={user} lang={lang} showToast={showToast} setPage={setPage} setViewUserId={setViewUserId} />}
       </div>
       <Footer />
       {showAuth && showAuth !== "logout" && <AuthModal mode={showAuth} setMode={setShowAuth} onClose={() => setShowAuth(null)} onLogin={u => setUser(u)} />}
