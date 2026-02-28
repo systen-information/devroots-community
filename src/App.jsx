@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useRef } from "react";
 
 // ============================================================
 // API CONFIG
@@ -141,6 +141,19 @@ const translations = {
     approve: "Approve", reject: "Reject", products: "Products",
     copiedLink: "Link copied!", reportSent: "Report submitted!",
     profileUpdated: "Profile updated!", sold: "sold",
+    messages: "Messages", support: "Support", noMessages: "No messages yet",
+    startConversation: "Start a conversation", typeMessage: "Type a message...",
+    send: "Send", searchUsers: "Search users...", conversations: "Conversations",
+    newMessage: "New Message", online: "Online",
+    supportCenter: "Support Center", supportDesc: "Need help? Submit a ticket and we'll get back to you.",
+    newTicket: "New Ticket", myTickets: "My Tickets", allTickets: "All Tickets",
+    ticketSubject: "Subject", ticketCategory: "Category", ticketPriority: "Priority",
+    ticketContent: "Describe your issue...", submitTicket: "Submit Ticket",
+    open: "Open", inProgress: "In Progress", resolved: "Resolved", closed: "Closed",
+    normal: "Normal", high: "High", urgent: "Urgent", low: "Low",
+    general: "General", bug: "Bug Report", feature: "Feature Request", account: "Account Issue",
+    typeReply: "Type your reply...", sendReply: "Send Reply", noTickets: "No tickets yet",
+    staffReply: "Staff Reply",
   },
   ar: {
     dir: "rtl", brand: "DevRoots", tagline: "مجتمع مطوري رابلز",
@@ -196,6 +209,19 @@ const translations = {
     approve: "موافقة", reject: "رفض", products: "منتجات",
     copiedLink: "تم نسخ الرابط!", reportSent: "تم إرسال البلاغ!",
     profileUpdated: "تم تحديث الملف الشخصي!", sold: "مُباع",
+    messages: "الرسائل", support: "الدعم", noMessages: "لا توجد رسائل بعد",
+    startConversation: "ابدأ محادثة", typeMessage: "اكتب رسالة...",
+    send: "إرسال", searchUsers: "ابحث عن مستخدمين...", conversations: "المحادثات",
+    newMessage: "رسالة جديدة", online: "متصل",
+    supportCenter: "مركز الدعم", supportDesc: "تحتاج مساعدة؟ أرسل تذكرة وسنرد عليك.",
+    newTicket: "تذكرة جديدة", myTickets: "تذاكري", allTickets: "جميع التذاكر",
+    ticketSubject: "الموضوع", ticketCategory: "التصنيف", ticketPriority: "الأولوية",
+    ticketContent: "اوصف مشكلتك...", submitTicket: "إرسال التذكرة",
+    open: "مفتوحة", inProgress: "قيد المعالجة", resolved: "تم الحل", closed: "مغلقة",
+    normal: "عادي", high: "عالي", urgent: "عاجل", low: "منخفض",
+    general: "عام", bug: "تقرير خطأ", feature: "طلب ميزة", account: "مشكلة حساب",
+    typeReply: "اكتب ردك...", sendReply: "إرسال الرد", noTickets: "لا توجد تذاكر بعد",
+    staffReply: "رد الدعم",
   },
 };
 
@@ -414,7 +440,73 @@ const getStyles = (dir) => `
     .shop-grid { grid-template-columns: 1fr; } .prof-header { flex-direction: column; text-align: center; }
     .nav-links { display: none; } .hero-stats { gap: 1.5rem; }
     .product-detail { grid-template-columns: 1fr; } .notif-panel { width: 300px; right: -50px; }
+    .msg-layout { grid-template-columns: 1fr !important; } .msg-sidebar { display: none; }
+    .msg-layout.show-sidebar .msg-sidebar { display: block; } .msg-layout.show-sidebar .msg-chat { display: none; }
   }
+
+  /* Messages */
+  .msg-layout { display: grid; grid-template-columns: 320px 1fr; gap: 0; height: 70vh; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--bg-surface); }
+  .msg-sidebar { border-right: 1px solid var(--border); overflow-y: auto; }
+  [dir="rtl"] .msg-sidebar { border-right: none; border-left: 1px solid var(--border); }
+  .msg-sidebar-head { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .msg-search { width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-xs); color: var(--text-primary); font-family: var(--font-body); font-size: 0.82rem; outline: none; margin-top: 0.75rem; direction: ${dir}; }
+  .msg-search:focus { border-color: var(--accent); }
+  .msg-convo { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--border); }
+  .msg-convo:hover { background: var(--bg-hover); }
+  .msg-convo.active { background: var(--accent-dim); border-left: 3px solid var(--accent); }
+  [dir="rtl"] .msg-convo.active { border-left: none; border-right: 3px solid var(--accent); }
+  .msg-convo-avatar { width: 42px; height: 42px; background: var(--bg-surface-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .msg-convo-info { flex: 1; min-width: 0; }
+  .msg-convo-name { font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; }
+  .msg-convo-last { color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-convo-time { color: var(--text-muted); font-size: 0.7rem; text-align: right; flex-shrink: 0; }
+  .msg-unread-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  .msg-chat { display: flex; flex-direction: column; }
+  .msg-chat-head { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .msg-chat-head h3 { font-size: 1rem; font-weight: 700; }
+  .msg-feed { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 12px; }
+  .msg-bubble { max-width: 75%; padding: 10px 16px; border-radius: 16px; font-size: 0.88rem; line-height: 1.5; word-wrap: break-word; }
+  .msg-bubble.sent { background: var(--accent); color: var(--bg-root); align-self: flex-end; border-bottom-right-radius: 4px; }
+  [dir="rtl"] .msg-bubble.sent { border-bottom-right-radius: 16px; border-bottom-left-radius: 4px; }
+  .msg-bubble.recv { background: var(--bg-surface-2); color: var(--text-primary); align-self: flex-start; border-bottom-left-radius: 4px; }
+  [dir="rtl"] .msg-bubble.recv { border-bottom-left-radius: 16px; border-bottom-right-radius: 4px; }
+  .msg-bubble-time { font-size: 0.66rem; color: var(--text-muted); margin-top: 4px; }
+  .msg-bubble.sent .msg-bubble-time { color: rgba(255,255,255,0.6); text-align: right; }
+  .msg-input-bar { display: flex; gap: 8px; padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+  .msg-input { flex: 1; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 20px; color: var(--text-primary); font-family: var(--font-body); font-size: 0.88rem; outline: none; direction: ${dir}; }
+  .msg-input:focus { border-color: var(--accent); }
+  .msg-send-btn { padding: 10px 20px; border-radius: 20px; }
+
+  .user-search-results { border: 1px solid var(--border); border-radius: var(--radius-xs); margin-top: 4px; max-height: 200px; overflow-y: auto; background: var(--bg-surface-2); }
+  .user-search-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .user-search-item:hover { background: var(--bg-hover); }
+
+  /* Tickets */
+  .ticket-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .ticket-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.2s; }
+  .ticket-card:hover { border-color: var(--accent); }
+  .ticket-id { color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
+  .ticket-subject { font-weight: 700; font-size: 0.95rem; }
+  .ticket-meta { display: flex; gap: 0.75rem; margin-top: 4px; font-size: 0.78rem; color: var(--text-muted); }
+  .ticket-status { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+  .ticket-status.open { background: rgba(76,175,80,0.15); color: #4caf50; }
+  .ticket-status.in-progress { background: rgba(255,152,0,0.15); color: #ff9800; }
+  .ticket-status.resolved { background: rgba(33,150,243,0.15); color: #2196f3; }
+  .ticket-status.closed { background: rgba(158,158,158,0.15); color: #9e9e9e; }
+  .ticket-priority { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .ticket-priority.urgent { background: rgba(244,67,54,0.15); color: #f44336; }
+  .ticket-priority.high { background: rgba(255,152,0,0.15); color: #ff9800; }
+  .ticket-priority.normal { background: rgba(33,150,243,0.15); color: #2196f3; }
+  .ticket-priority.low { background: rgba(158,158,158,0.15); color: #9e9e9e; }
+  .ticket-thread { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+  .ticket-reply { padding: 1rem 1.25rem; border-radius: var(--radius-sm); }
+  .ticket-reply.staff { background: var(--accent-dim); border-left: 3px solid var(--accent); }
+  [dir="rtl"] .ticket-reply.staff { border-left: none; border-right: 3px solid var(--accent); }
+  .ticket-reply.user { background: var(--bg-surface-2); }
+  .ticket-reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; }
+  .ticket-reply-name { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .ticket-reply-body { font-size: 0.9rem; line-height: 1.7; white-space: pre-wrap; }
 `;
 
 // ============================================================
@@ -468,7 +560,8 @@ function Navbar({ page, setPage, user, setShowAuth, lang, toggleLang, toast }) {
         </div><span className="nav-brand-text">{t.brand}</span>
       </div>
       <div className="nav-links">
-        {["home", "forums", "shop"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p]}</button>)}
+        {["home", "forums", "shop", "support"].map(p => <button key={p} className={`nav-link ${page === p ? "active" : ""}`} onClick={() => setPage(p)}>{t[p] || p}</button>)}
+        {user && <button className={`nav-link ${page === "messages" ? "active" : ""}`} onClick={() => setPage("messages")} style={{ position: "relative" }}>💬 {t.messages}</button>}
         {user && <button className={`nav-link ${page === "profile" ? "active" : ""}`} onClick={() => setPage("profile")}>{t.profile}</button>}
         {user && ["admin", "tech-moderator", "arch-developer"].includes(user.role) && <button className={`nav-link ${page === "admin" ? "active" : ""}`} onClick={() => setPage("admin")} style={{ color: page === "admin" ? "var(--amber)" : undefined }}>🛡️ Admin</button>}
       </div>
@@ -1212,6 +1305,306 @@ function AdminPage({ user, lang, showToast }) {
 // ============================================================
 // PROFILE — with working save
 // ============================================================
+// ============================================================
+// MESSAGES PAGE
+// ============================================================
+function MessagesPage({ user, lang, showToast, setPage }) {
+  const t = useLang();
+  const [convos, setConvos] = useState([]);
+  const [msgs, setMsgs] = useState([]);
+  const [activeUser, setActiveUser] = useState(null);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [searchQ, setSearchQ] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const feedRef = useRef(null);
+
+  const loadConvos = async () => { try { const c = await api("/api/messages/conversations"); setConvos(c); } catch {} finally { setLoading(false); } };
+  useEffect(() => { if (user) loadConvos(); }, [user]);
+
+  const openChat = async (userId, name, avatar, role) => {
+    setActiveUser({ id: userId, name, avatar, role });
+    setShowSidebar(false);
+    try { const m = await api(`/api/messages/${userId}`); setMsgs(m); } catch {}
+    setTimeout(() => { if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight; }, 100);
+    loadConvos();
+  };
+
+  const sendMsg = async () => {
+    if (!text.trim() || !activeUser) return;
+    try {
+      await api(`/api/messages/${activeUser.id}`, { method: "POST", body: JSON.stringify({ content: text.trim() }) });
+      setText("");
+      const m = await api(`/api/messages/${activeUser.id}`); setMsgs(m);
+      setTimeout(() => { if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight; }, 100);
+      loadConvos();
+    } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  const searchUsers = async (q) => {
+    setSearchQ(q);
+    if (q.length < 2) { setSearchResults([]); return; }
+    try { const r = await api(`/api/users/search?q=${encodeURIComponent(q)}`); setSearchResults(r); } catch {}
+  };
+
+  if (!user) return <div className="empty"><div className="empty-icon">💬</div><p>{t.signInToView}</p></div>;
+
+  return (
+    <div className="fade">
+      <div className="section-head">
+        <div><h2 className="section-title">💬 {t.messages}</h2><p className="section-sub">{t.startConversation}</p></div>
+      </div>
+      <div className={`msg-layout ${showSidebar ? "show-sidebar" : ""}`}>
+        <div className="msg-sidebar">
+          <div className="msg-sidebar-head">
+            <strong style={{ fontSize: "0.95rem" }}>{t.conversations}</strong>
+          </div>
+          <div style={{ padding: "0 12px 8px" }}>
+            <input className="msg-search" placeholder={t.searchUsers} value={searchQ} onChange={e => searchUsers(e.target.value)} />
+            {searchResults.length > 0 && (
+              <div className="user-search-results">
+                {searchResults.map(u => (
+                  <div key={u.id} className="user-search-item" onClick={() => { openChat(u.id, u.username, u.avatar, u.role); setSearchQ(""); setSearchResults([]); }}>
+                    <span style={{ fontSize: "1.2rem" }}>{u.avatar || "👤"}</span>
+                    <span style={{ fontWeight: 600, color: getRoleColor(u.role) }}>{u.username}</span>
+                    <span className={`role-badge role-${u.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(u.role, lang)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {loading ? <Loading /> : convos.length === 0 ? (
+            <div className="empty" style={{ padding: "2rem 1rem" }}><div className="empty-icon">💬</div><p style={{ fontSize: "0.82rem" }}>{t.noMessages}</p></div>
+          ) : convos.map(c => (
+            <div key={c.other_id} className={`msg-convo ${activeUser?.id === c.other_id ? "active" : ""}`} onClick={() => openChat(c.other_id, c.other_name, c.other_avatar, c.other_role)}>
+              <div className="msg-convo-avatar">{c.other_avatar || "👤"}</div>
+              <div className="msg-convo-info">
+                <div className="msg-convo-name" style={{ color: getRoleColor(c.other_role) }}>{c.other_name}</div>
+                <div className="msg-convo-last">{c.last_msg}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                <div className="msg-convo-time">{new Date(c.last_time).toLocaleDateString()}</div>
+                {c.unread_count > 0 && <div className="msg-unread-dot" />}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="msg-chat">
+          {activeUser ? (
+            <>
+              <div className="msg-chat-head">
+                <button className="btn btn-ghost btn-sm msg-back-btn" onClick={() => setShowSidebar(true)}>←</button>
+                <div className="msg-convo-avatar" style={{ width: 36, height: 36, fontSize: "1rem" }}>{activeUser.avatar || "👤"}</div>
+                <div>
+                  <h3 style={{ color: getRoleColor(activeUser.role) }}>{activeUser.name}</h3>
+                  <span className={`role-badge role-${activeUser.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(activeUser.role, lang)}</span>
+                </div>
+              </div>
+              <div className="msg-feed" ref={feedRef}>
+                {msgs.map(m => (
+                  <div key={m.id} className={`msg-bubble ${m.sender_id === user.id ? "sent" : "recv"}`}>
+                    <div>{m.content}</div>
+                    <div className="msg-bubble-time">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="msg-input-bar">
+                <input className="msg-input" placeholder={t.typeMessage} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} />
+                <button className="btn btn-accent msg-send-btn" onClick={sendMsg}>{t.send}</button>
+              </div>
+            </>
+          ) : (
+            <div className="empty" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="empty-icon">💬</div>
+              <p>{t.startConversation}</p>
+              <p style={{ fontSize: "0.82rem", marginTop: "0.5rem" }}>{t.searchUsers}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SUPPORT PAGE
+// ============================================================
+function SupportPage({ user, setShowAuth, lang, showToast }) {
+  const t = useLang();
+  const [view, setView] = useState("list");
+  const [tickets, setTickets] = useState([]);
+  const [activeTicket, setActiveTicket] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ subject: "", category: "general", priority: "normal", content: "" });
+  const [replyText, setReplyText] = useState("");
+
+  const isAdmin = user && ["admin", "tech-moderator", "arch-developer"].includes(user.role);
+
+  const loadTickets = async () => { setLoading(true); try { const t = await api("/api/tickets"); setTickets(t); } catch {} finally { setLoading(false); } };
+
+  useEffect(() => { if (user) loadTickets(); }, [user]);
+
+  const openTicket = async (id) => {
+    try { const data = await api(`/api/tickets/${id}`); setActiveTicket(data); setView("detail"); } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  const submitTicket = async () => {
+    if (!form.subject || !form.content) { showToast("❌ Subject and description required"); return; }
+    try {
+      const ticket = await api("/api/tickets", { method: "POST", body: JSON.stringify(form) });
+      showToast("✅ Ticket #" + ticket.id + " created!");
+      setForm({ subject: "", category: "general", priority: "normal", content: "" });
+      setView("list"); loadTickets();
+    } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  const sendReply = async () => {
+    if (!replyText.trim()) return;
+    try {
+      await api(`/api/tickets/${activeTicket.ticket.id}/reply`, { method: "POST", body: JSON.stringify({ content: replyText.trim() }) });
+      setReplyText("");
+      openTicket(activeTicket.ticket.id);
+      showToast("✅ Reply sent!");
+    } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  const updateStatus = async (status) => {
+    try {
+      await api(`/api/tickets/${activeTicket.ticket.id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
+      showToast("Status updated: " + status);
+      openTicket(activeTicket.ticket.id);
+    } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  const statusColor = (s) => ({ open: "#4caf50", "in-progress": "#ff9800", resolved: "#2196f3", closed: "#9e9e9e" }[s] || "#9e9e9e");
+  const statusLabel = (s) => ({ open: t.open, "in-progress": t.inProgress, resolved: t.resolved, closed: t.closed }[s] || s);
+  const catLabel = (c) => ({ general: t.general, bug: t.bug, feature: t.feature, account: t.account }[c] || c);
+  const priLabel = (p) => ({ low: t.low, normal: t.normal, high: t.high, urgent: t.urgent }[p] || p);
+
+  return (
+    <div className="fade">
+      <div className="section-head">
+        <div><h2 className="section-title">🎫 {t.supportCenter}</h2><p className="section-sub">{t.supportDesc}</p></div>
+        {user && view === "list" && <button className="btn btn-accent" onClick={() => setView("new")}>+ {t.newTicket}</button>}
+      </div>
+
+      {!user ? (
+        <div className="empty"><div className="empty-icon">🎫</div><p>{t.supportDesc}</p>
+          <button className="btn btn-accent" style={{ marginTop: "1rem" }} onClick={() => setShowAuth("login")}>{t.signIn}</button>
+        </div>
+      ) : view === "new" ? (
+        <div className="card fade" style={{ maxWidth: 650, margin: "0 auto", padding: "2rem" }}>
+          <h3 style={{ fontWeight: 700, marginBottom: "1.5rem" }}>📝 {t.newTicket}</h3>
+          <div className="fg"><label className="fg-label">{t.ticketSubject}</label><input className="fg-input" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} placeholder={t.ticketSubject} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="fg"><label className="fg-label">{t.ticketCategory}</label>
+              <select className="select-field" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                {["general", "bug", "feature", "account"].map(c => <option key={c} value={c}>{catLabel(c)}</option>)}
+              </select>
+            </div>
+            <div className="fg"><label className="fg-label">{t.ticketPriority}</label>
+              <select className="select-field" value={form.priority} onChange={e => setForm({...form, priority: e.target.value})}>
+                {["low", "normal", "high", "urgent"].map(p => <option key={p} value={p}>{priLabel(p)}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="fg"><label className="fg-label">{t.description}</label>
+            <textarea className="reply-area" rows={6} value={form.content} onChange={e => setForm({...form, content: e.target.value})} placeholder={t.ticketContent} />
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button className="btn btn-surface" onClick={() => setView("list")}>{t.cancel}</button>
+            <button className="btn btn-accent" onClick={submitTicket}>{t.submitTicket}</button>
+          </div>
+        </div>
+      ) : view === "detail" && activeTicket ? (
+        <div className="fade">
+          <div className="bread">
+            <button onClick={() => { setView("list"); setActiveTicket(null); }}>← {t.supportCenter}</button>
+            <span>/</span><span>#{activeTicket.ticket.id}</span>
+          </div>
+          <div className="card" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+              <div>
+                <div className="ticket-id">#{activeTicket.ticket.id} · {catLabel(activeTicket.ticket.category)}</div>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", margin: "0.5rem 0" }}>{activeTicket.ticket.subject}</h2>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "1rem" }}>{activeTicket.ticket.avatar || "👤"}</span>
+                  <span style={{ fontWeight: 600, color: getRoleColor(activeTicket.ticket.user_role), fontSize: "0.88rem" }}>{activeTicket.ticket.username}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>· {new Date(activeTicket.ticket.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span className={`ticket-status ${activeTicket.ticket.status}`}>{statusLabel(activeTicket.ticket.status)}</span>
+                <span className={`ticket-priority ${activeTicket.ticket.priority}`}>{priLabel(activeTicket.ticket.priority)}</span>
+                {isAdmin && (
+                  <select className="select-field" value={activeTicket.ticket.status} onChange={e => updateStatus(e.target.value)} style={{ width: "auto", padding: "4px 8px", fontSize: "0.78rem", background: "var(--bg-surface-2)" }}>
+                    {["open", "in-progress", "resolved", "closed"].map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="ticket-thread">
+            {activeTicket.replies.map(r => (
+              <div key={r.id} className={`ticket-reply ${r.is_staff ? "staff" : "user"}`}>
+                <div className="ticket-reply-head">
+                  <div className="ticket-reply-name">
+                    <span>{r.avatar || "👤"}</span>
+                    <span style={{ color: getRoleColor(r.role) }}>{r.username}</span>
+                    {r.is_staff && <span className="role-badge role-admin" style={{ fontSize: "0.6rem" }}>{t.staffReply}</span>}
+                  </div>
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>{new Date(r.created_at).toLocaleString()}</span>
+                </div>
+                <div className="ticket-reply-body">{r.content}</div>
+              </div>
+            ))}
+          </div>
+
+          {activeTicket.ticket.status !== "closed" && (
+            <div className="reply-box" style={{ marginTop: "1.5rem" }}>
+              <h3>{t.sendReply}</h3>
+              <textarea className="reply-area" rows={4} value={replyText} onChange={e => setReplyText(e.target.value)} placeholder={t.typeReply} />
+              <div className="reply-bar">
+                <button className="btn btn-accent" onClick={sendReply}>{t.sendReply}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          {loading ? <Loading /> : tickets.length === 0 ? (
+            <div className="empty"><div className="empty-icon">🎫</div><p>{t.noTickets}</p>
+              <button className="btn btn-accent" style={{ marginTop: "1rem" }} onClick={() => setView("new")}>+ {t.newTicket}</button>
+            </div>
+          ) : (
+            <div className="ticket-list stagger">
+              {tickets.map(tk => (
+                <div key={tk.id} className="card ticket-card" onClick={() => openTicket(tk.id)}>
+                  <div style={{ flex: 1 }}>
+                    <div className="ticket-id">#{tk.id} · {catLabel(tk.category)}</div>
+                    <div className="ticket-subject">{tk.subject}</div>
+                    <div className="ticket-meta">
+                      <span>{tk.avatar || "👤"} {tk.username}</span>
+                      <span>· {tk.reply_count} {t.replies}</span>
+                      <span>· {new Date(tk.updated_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                    <span className={`ticket-status ${tk.status}`}>{statusLabel(tk.status)}</span>
+                    <span className={`ticket-priority ${tk.priority}`}>{priLabel(tk.priority)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProfilePage({ user, setUser, lang, showToast }) {
   const t = useLang();
   const [form, setForm] = useState({ username: "", bio: "" });
@@ -1302,6 +1695,8 @@ export default function DevRoots() {
         {page === "home" && <ForumsHome nav={handleHomeForumNav} user={user} setShowAuth={handleShowAuth} lang={lang} />}
         {page === "forums" && <ForumsPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
         {page === "shop" && <ShopPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
+        {page === "messages" && <MessagesPage user={user} lang={lang} showToast={showToast} setPage={setPage} />}
+        {page === "support" && <SupportPage user={user} setShowAuth={handleShowAuth} lang={lang} showToast={showToast} />}
         {page === "admin" && <AdminPage user={user} lang={lang} showToast={showToast} />}
         {page === "profile" && <ProfilePage user={user} setUser={setUser} lang={lang} showToast={showToast} />}
       </div>
