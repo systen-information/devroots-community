@@ -154,6 +154,13 @@ const translations = {
     general: "General", bug: "Bug Report", feature: "Feature Request", account: "Account Issue",
     typeReply: "Type your reply...", sendReply: "Send Reply", noTickets: "No tickets yet",
     staffReply: "Staff Reply",
+    friends: "Friends", addFriend: "Add Friend", removeFriend: "Remove Friend",
+    friendRequestSent: "Request Sent", acceptRequest: "Accept", declineRequest: "Decline",
+    pendingRequests: "Pending Requests", friendsSince: "Friends since",
+    noFriends: "No friends yet. Start connecting!", friendRemoved: "Friend removed",
+    friendAdded: "Friend request sent!", friendAccepted: "Friend request accepted!",
+    alreadyFriends: "Already friends", requestPending: "Request pending",
+    myFriends: "My Friends", friendCount: "friends",
   },
   ar: {
     dir: "rtl", brand: "DevRoots", tagline: "مجتمع مطوري رابلز",
@@ -222,6 +229,13 @@ const translations = {
     general: "عام", bug: "تقرير خطأ", feature: "طلب ميزة", account: "مشكلة حساب",
     typeReply: "اكتب ردك...", sendReply: "إرسال الرد", noTickets: "لا توجد تذاكر بعد",
     staffReply: "رد الدعم",
+    friends: "الأصدقاء", addFriend: "إضافة صديق", removeFriend: "إزالة صديق",
+    friendRequestSent: "تم الإرسال", acceptRequest: "قبول", declineRequest: "رفض",
+    pendingRequests: "طلبات معلقة", friendsSince: "أصدقاء منذ",
+    noFriends: "لا يوجد أصدقاء بعد. ابدأ بالتواصل!", friendRemoved: "تم إزالة الصديق",
+    friendAdded: "تم إرسال طلب الصداقة!", friendAccepted: "تم قبول طلب الصداقة!",
+    alreadyFriends: "أصدقاء بالفعل", requestPending: "الطلب معلق",
+    myFriends: "أصدقائي", friendCount: "أصدقاء",
   },
 };
 
@@ -507,6 +521,29 @@ const getStyles = (dir) => `
   .ticket-reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; }
   .ticket-reply-name { font-weight: 700; display: flex; align-items: center; gap: 6px; }
   .ticket-reply-body { font-size: 0.9rem; line-height: 1.7; white-space: pre-wrap; }
+
+  /* Friends */
+  .friend-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.2s; font-family: var(--font-body); }
+  .friend-btn.add { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .friend-btn.add:hover { background: var(--accent); color: var(--bg-root); }
+  .friend-btn.pending { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); cursor: default; }
+  .friend-btn.accept { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .friend-btn.accept:hover { background: var(--green); color: #fff; }
+  .friend-btn.decline { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .friend-btn.decline:hover { background: var(--red); color: #fff; }
+  .friend-btn.remove { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .friend-btn.remove:hover { border-color: var(--red); color: var(--red); }
+  .friend-btn.friends { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); cursor: default; }
+
+  .friend-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; }
+  .friend-card:hover { border-color: var(--accent); }
+  .friend-avatar { width: 48px; height: 48px; background: var(--bg-surface-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+  .friend-info { flex: 1; min-width: 0; }
+  .friend-name { font-weight: 700; font-size: 0.95rem; }
+  .friend-role { font-size: 0.78rem; color: var(--text-muted); }
+  .friend-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .pending-badge { background: var(--amber); color: var(--bg-root); font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 10px; margin-left: 6px; }
 `;
 
 // ============================================================
@@ -932,7 +969,7 @@ function ThreadView({ threadId, nav, user, setShowAuth, lang, showToast }) {
         {posts.map((p, i) => (
           <div key={p.id} className={`post-card ${i === 0 ? "op-post" : ""}`}>
             <div className="post-head">
-              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname" style={{ color: getRoleColor(p.author_role) }}>{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{getRoleLabel(p.author_role, lang)}</span></div></div>
+              <div className="post-avatar-wrap"><div className="post-avatar">{p.author_avatar}</div><div><div className="post-uname" style={{ color: getRoleColor(p.author_role) }}>{p.author_name}</div><span className={`role-badge role-${p.author_role}`}>{getRoleLabel(p.author_role, lang)}</span><FriendButton targetUserId={p.author_id} user={user} lang={lang} showToast={showToast} size="sm" /></div></div>
               <div className="post-date">{new Date(p.created_at).toLocaleDateString()}</div>
             </div>
             <div className="post-body">{lang === "ar" ? p.content_ar || p.content : p.content}</div>
@@ -1396,10 +1433,11 @@ function MessagesPage({ user, lang, showToast, setPage }) {
               <div className="msg-chat-head">
                 <button className="btn btn-ghost btn-sm msg-back-btn" onClick={() => setShowSidebar(true)}>←</button>
                 <div className="msg-convo-avatar" style={{ width: 36, height: 36, fontSize: "1rem" }}>{activeUser.avatar || "👤"}</div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <h3 style={{ color: getRoleColor(activeUser.role) }}>{activeUser.name}</h3>
                   <span className={`role-badge role-${activeUser.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(activeUser.role, lang)}</span>
                 </div>
+                <FriendButton targetUserId={activeUser.id} user={user} lang={lang} showToast={showToast} size="sm" />
               </div>
               <div className="msg-feed" ref={feedRef}>
                 {msgs.map(m => (
@@ -1605,20 +1643,85 @@ function SupportPage({ user, setShowAuth, lang, showToast }) {
   );
 }
 
+// ============================================================
+// FRIEND BUTTON (reusable)
+// ============================================================
+function FriendButton({ targetUserId, user, lang, showToast, size }) {
+  const t = useLang();
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    if (!user || !targetUserId || targetUserId === user.id) { setStatus("self"); return; }
+    api(`/api/friends/status/${targetUserId}`).then(d => setStatus(d.status)).catch(() => setStatus("none"));
+  }, [targetUserId, user]);
+
+  const sendRequest = async () => {
+    try { await api(`/api/friends/request/${targetUserId}`, { method: "POST" }); setStatus("sent"); showToast("✅ " + t.friendAdded); } catch (e) { showToast("❌ " + e.message); }
+  };
+  const accept = async () => {
+    try { await api(`/api/friends/accept/${targetUserId}`, { method: "PUT" }); setStatus("friends"); showToast("✅ " + t.friendAccepted); } catch (e) { showToast("❌ " + e.message); }
+  };
+  const decline = async () => {
+    try { await api(`/api/friends/decline/${targetUserId}`, { method: "PUT" }); setStatus("none"); } catch (e) { showToast("❌ " + e.message); }
+  };
+  const remove = async () => {
+    if (!confirm("Remove friend?")) return;
+    try { await api(`/api/friends/${targetUserId}`, { method: "DELETE" }); setStatus("none"); showToast(t.friendRemoved); } catch (e) { showToast("❌ " + e.message); }
+  };
+
+  if (status === "self" || status === "loading" || !user) return null;
+  const s = size === "sm" ? { fontSize: "0.7rem", padding: "3px 10px" } : {};
+
+  if (status === "none") return <button className="friend-btn add" style={s} onClick={sendRequest}>+ {t.addFriend}</button>;
+  if (status === "sent") return <span className="friend-btn pending" style={s}>⏳ {t.friendRequestSent}</span>;
+  if (status === "received") return (
+    <span style={{ display: "inline-flex", gap: 4 }}>
+      <button className="friend-btn accept" style={s} onClick={accept}>✓ {t.acceptRequest}</button>
+      <button className="friend-btn decline" style={s} onClick={decline}>✕</button>
+    </span>
+  );
+  if (status === "friends") return <button className="friend-btn remove" style={s} onClick={remove} title={t.removeFriend}>✓ {t.friends}</button>;
+  return null;
+}
+
 function ProfilePage({ user, setUser, lang, showToast }) {
   const t = useLang();
   const [form, setForm] = useState({ username: "", bio: "" });
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState("settings");
+  const [friends, setFriends] = useState([]);
+  const [pending, setPending] = useState([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
   useEffect(() => { if (user) setForm({ username: user.username || "", bio: user.bio || "" }); }, [user]);
+
+  const loadFriends = async () => {
+    setFriendsLoading(true);
+    try {
+      const [f, p] = await Promise.all([api("/api/friends"), api("/api/friends/pending")]);
+      setFriends(f); setPending(p);
+    } catch {} finally { setFriendsLoading(false); }
+  };
+
+  useEffect(() => { if (tab === "friends" && user) loadFriends(); }, [tab, user]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Update locally (backend profile update would need a new endpoint, so we save locally for now)
       setUser({ ...user, username: form.username, bio: form.bio });
       showToast(t.profileUpdated);
     } catch (err) { alert(err.message); } finally { setSaving(false); }
+  };
+
+  const acceptFriend = async (id) => {
+    try { await api(`/api/friends/accept/${id}`, { method: "PUT" }); showToast("✅ " + t.friendAccepted); loadFriends(); } catch (e) { showToast("❌ " + e.message); }
+  };
+  const declineFriend = async (id) => {
+    try { await api(`/api/friends/decline/${id}`, { method: "PUT" }); loadFriends(); } catch (e) { showToast("❌ " + e.message); }
+  };
+  const removeFriend = async (id) => {
+    if (!confirm("Remove friend?")) return;
+    try { await api(`/api/friends/${id}`, { method: "DELETE" }); showToast(t.friendRemoved); loadFriends(); } catch (e) { showToast("❌ " + e.message); }
   };
 
   if (!user) return <div className="empty"><div className="empty-icon">🔒</div><p>{t.signInToView}</p></div>;
@@ -1629,16 +1732,82 @@ function ProfilePage({ user, setUser, lang, showToast }) {
         <div>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem" }}>{user.username}</h2>
           <span className={`role-badge role-${user.role}`}>{getRoleLabel(user.role, lang)}</span>
-          <div className="prof-stats"><div style={{ textAlign: "center" }}><div className="prof-stat-v">{user.reputation || 0}</div><div className="prof-stat-l">{t.reputation}</div></div></div>
+          <div className="prof-stats">
+            <div style={{ textAlign: "center" }}><div className="prof-stat-v">{user.reputation || 0}</div><div className="prof-stat-l">{t.reputation}</div></div>
+            <div style={{ textAlign: "center" }}><div className="prof-stat-v">{friends.length}</div><div className="prof-stat-l">{t.friendCount}</div></div>
+          </div>
         </div>
       </div>
-      <div className="card">
-        <h3 style={{ marginBottom: "1.25rem", fontWeight: 700 }}>{t.accountSettings}</h3>
-        <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>
-        <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" defaultValue={user.email} disabled style={{ opacity: 0.5 }} /></div>
-        <div className="fg"><label className="fg-label">{t.bio}</label><textarea className="reply-area" style={{ minHeight: 80 }} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></div>
-        <button className="btn btn-accent" onClick={handleSave} disabled={saving}>{saving ? "..." : t.saveChanges}</button>
+
+      <div className="tabs">
+        {[["settings", "⚙️ " + t.settings], ["friends", "👥 " + t.friends]].map(([key, label]) => (
+          <button key={key} className={`tab ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>
+            {label}
+            {key === "friends" && pending.length > 0 && <span className="pending-badge">{pending.length}</span>}
+          </button>
+        ))}
       </div>
+
+      {tab === "settings" && (
+        <div className="card">
+          <h3 style={{ marginBottom: "1.25rem", fontWeight: 700 }}>{t.accountSettings}</h3>
+          <div className="fg"><label className="fg-label">{t.username}</label><input className="fg-input" value={form.username} onChange={e => setForm({...form, username: e.target.value})} /></div>
+          <div className="fg"><label className="fg-label">{t.email}</label><input className="fg-input" type="email" defaultValue={user.email} disabled style={{ opacity: 0.5 }} /></div>
+          <div className="fg"><label className="fg-label">{t.bio}</label><textarea className="reply-area" style={{ minHeight: 80 }} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></div>
+          <button className="btn btn-accent" onClick={handleSave} disabled={saving}>{saving ? "..." : t.saveChanges}</button>
+        </div>
+      )}
+
+      {tab === "friends" && (
+        <div>
+          {pending.length > 0 && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h3 style={{ fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: 8 }}>
+                📬 {t.pendingRequests} <span className="pending-badge">{pending.length}</span>
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {pending.map(p => (
+                  <div key={p.id} className="card friend-card">
+                    <div className="friend-avatar">{p.avatar || "👤"}</div>
+                    <div className="friend-info">
+                      <div className="friend-name" style={{ color: getRoleColor(p.role) }}>{p.username}</div>
+                      <span className={`role-badge role-${p.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(p.role, lang)}</span>
+                    </div>
+                    <div className="friend-actions">
+                      <button className="friend-btn accept" onClick={() => acceptFriend(p.id)}>✓ {t.acceptRequest}</button>
+                      <button className="friend-btn decline" onClick={() => declineFriend(p.id)}>✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <h3 style={{ fontWeight: 700, marginBottom: "1rem" }}>👥 {t.myFriends} ({friends.length})</h3>
+          {friendsLoading ? <Loading /> : friends.length === 0 ? (
+            <div className="empty"><div className="empty-icon">👥</div><p>{t.noFriends}</p></div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }} className="stagger">
+              {friends.map(f => (
+                <div key={f.id} className="card friend-card">
+                  <div className="friend-avatar">{f.avatar || "👤"}</div>
+                  <div className="friend-info">
+                    <div className="friend-name" style={{ color: getRoleColor(f.role) }}>{f.username}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className={`role-badge role-${f.role}`} style={{ fontSize: "0.6rem" }}>{getRoleLabel(f.role, lang)}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>{t.friendsSince} {new Date(f.friends_since).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="friend-actions">
+                    <button className="friend-btn add" title={t.messages}>💬</button>
+                    <button className="friend-btn remove" onClick={() => removeFriend(f.id)}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
