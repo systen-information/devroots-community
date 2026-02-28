@@ -9,7 +9,7 @@ const API_URL = "https://devroots-backend.onrender.com";
 // FIREBASE CONFIG — Replace these with your Firebase project values
 // ============================================================
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC9HZg332YKLorHHoanLrweUgUu3NkU8bs",
+  apiKey: "AIzaSyC9HZg332YKLorHHoanlrweUgUu3NkU8bs",
   authDomain: "devroots-108db.firebaseapp.com",
   projectId: "devroots-108db",
   storageBucket: "devroots-108db.firebasestorage.app",
